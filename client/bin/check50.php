@@ -142,21 +142,11 @@
         }
     }
 
-    // prepare fields
-    $fields = array();
-
-    // TEMP
-    $fields["course"] = "cs50";
-    $fields["program"] = "speller";
-    $fields["term"] = "fall";
-    $fields["year"] = "2011";
-    $fields["version"] = VERSION;
-
     // sort files
     natcasesort($files);
 
-    // counter for uploadable files
-    $counter = 0;
+    // prepare to upload files
+    $uploads = array();
 
     // determine which files to upload
     foreach ($files as $file)
@@ -200,22 +190,40 @@
             continue;
         }
 
-        // report progress
-        echo "Uploading $file...\n";
-
-        // add file to POST
-        $fields["file_{$counter}"] = "@{$file}";
-        $counter++;
+        // add file to uploads
+        array_push($uploads, $file);
     }
 
-    // ensure files were uploaded
-    if ($counter == 0)
+    // ensure files will be uploaded
+    if (count($uploads) == 0)
+        die("Nothing to check (because no files are checkable).\n");
+
+    // prepare ZIP
+    $zip = new ZipArchive();
+    $filename = tempnam(sys_get_temp_dir(), "check50-") . ".zip";
+    if ($zip->open($filename, ZIPARCHIVE::OVERWRITE) !== true)
+        die("Could not create ZIP file.\n");
+    foreach ($uploads as $upload)
     {
-        echo "Nothing to check (because no files were uploaded).\n";
-        exit(1);
+        if ($zip->addFile($upload) !== true)
+            die("Could not add {$file} to ZIP file.\n");
     }
+    if ($zip->close() !== true)
+        die("Could not close ZIP file.\n");
 
-    // POST files
+    // prepare fields
+    $fields = array();
+
+    // TEMP
+    $fields["course"] = "cs50";
+    $fields["FILE"] = "@{$filename}";
+    $fields["program"] = "speller";
+    $fields["school"] = "harvard.edu";
+    $fields["term"] = "fall";
+    $fields["year"] = "2011";
+    $fields["version"] = VERSION;
+
+    // POST fields
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_HEADER, false);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -227,6 +235,9 @@
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     $response = curl_exec($ch);
     $info = curl_getinfo($ch);
+
+    // delete ZIP
+    unlink($filename);
 
     // check response
     if ($info["http_code"] != 200)
