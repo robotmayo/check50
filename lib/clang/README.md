@@ -46,6 +46,6 @@ https://github.com/loarabia/Clang-tutorial/wiki/TutorialOrig
 For the Clang API, best to refer to the Doxygen docs at:
 http://clang.llvm.org/doxygen/
 
-Googling "<class name> clang" tends to hit the Doxygen page for that class with
+Googling "&lt;class name&gt; clang" tends to hit the Doxygen page for that class with
 pretty high frequency, so that's been the best way I (Nate) have found to
 navigate the docs.
