@@ -21,9 +21,10 @@ C and C++ code.
 
 Compilation
 ===========
-To compile, you'll need the LLVM and the Clang development headers:
+To compile, you'll need Clang itself, plus the LLVM and the Clang development
+headers:
 
-    $ sudo yum -y install clang-devel llvm-devel
+    $ sudo yum -y install clang clang-devel llvm-devel
 
 The current Makefile is set to compile for Clang 2, since on the CS50 Appliance
 v3.15, the latest version of Clang that we can get is Clang 2.9. If you're on
@@ -35,3 +36,16 @@ Testing
 `foobar.c` and `foobar.h` are junk files in this directory for testing purposes.
 They don't compile, but they do provide a bunch of different edge cases for
 function declarations and such.
+
+Resources
+=========
+There aren't many tutorials on Clang out there, so you're basically stuck with
+the following:
+https://github.com/loarabia/Clang-tutorial/wiki/TutorialOrig
+
+For the Clang API, best to refer to the Doxygen docs at:
+http://clang.llvm.org/doxygen/
+
+Googling "<class name> clang" tends to hit the Doxygen page for that class with
+pretty high frequency, so that's been the best way I (Nate) have found to
+navigate the docs.
