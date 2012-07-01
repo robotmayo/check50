@@ -36,7 +36,7 @@ public:
     public:
         typedef Fwk::Ptr<Notifiee> Ptr;
 
-        virtual void on_status(Status s) {}
+        virtual void on_status_is(Status s) {}
 
         Notifiee(Activity* activity) : Fwk::BaseNotifiee<Activity>(activity) {}
     };
@@ -50,7 +50,7 @@ public:
     virtual void status_is(Status s) {
         _status = s;
         if (_notifiee != NULL) {
-            _notifiee->on_status(_status);
+            _notifiee->on_status_is(_status);
         }
     }
 
