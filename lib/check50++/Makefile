@@ -10,4 +10,4 @@ main: main.o $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 	
 clean:
-	rm -f $(TARGETS) $(OBJECTS) *.o *~ core
+	rm -f $(TARGETS) $(OBJECTS) *.o *~ core Fwk/*.o Fwk/*~ Fwk/core
