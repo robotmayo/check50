@@ -3,75 +3,71 @@
 
 #include <string>
 
-#include "Nominal.h"
 #include "Notifiee.h"
-
 #include "Ptr.h"
 #include "PtrInterface.h"
 
 namespace Fwk {
 
-class ActivityManager;
-
-class Activity : public Fwk::PtrInterface<Activity> {
+class Activity: public Fwk::PtrInterface<Activity> {
 public:
-    typedef Fwk::Ptr<Activity> Ptr;
+  typedef Fwk::Ptr<Activity> Ptr;
 
-    virtual std::string name() const { return _name; }
+  class Notifiee: public Fwk::BaseNotifiee<Activity> {
+  public:
+    typedef Fwk::Ptr<Notifiee> Ptr;
 
-    enum Status {
-        _free,
-        _waiting,
-        _ready,
-        _executing,
-        _deleted
-    };
-    static inline Status free() { return _free; }
-    static inline Status waiting() { return _waiting; }
-    static inline Status ready() { return _ready; }
-    static inline Status executing() { return _executing; }
-    static inline Status deleted() { return _deleted; }
+    virtual void on_status(Status s) {}
 
-    class Notifiee: public Fwk::BaseNotifiee<Activity> {
-    public:
-        typedef Fwk::Ptr<Notifiee> Ptr;
+    Notifiee(Activity *activity) : Fwk::BaseNotifiee<Activity>(activity) {}
+  };
 
-        virtual void on_status_is(Status s) {}
+  class Manager;
 
-        Notifiee(Activity* activity) : Fwk::BaseNotifiee<Activity>(activity) {}
-    };
-    virtual Fwk::Ptr<Notifiee> notifiee() const { return _notifiee; }
-    virtual void last_notifiee_is(Notifiee* n) {
-        Activity *me = const_cast<Activity *>(this);
-        me->_notifiee = n;
-    }
+  enum Status {
+    _free, 
+    _waiting,
+    _ready,
+    _executing,
+    _deleted
+  };
+  static inline Status free() { return _free; }
+  static inline Status waiting() { return _waiting; }
+  static inline Status ready() { return _ready; }
+  static inline Status executing() { return _executing; }
+  static inline Status deleted() { return _deleted; }
 
-    virtual Status status() const { return _status; }
-    virtual void status_is(Status s) {
-        _status = s;
-        if (_notifiee != NULL) {
-            _notifiee->on_status_is(_status);
-        }
-    }
+  virtual Status status() const = 0;
+  virtual void status_is(Status s) = 0;
 
-    ActivityManager *activity_manager() const { return _activity_manager; }
+
+  virtual Fwk::Ptr<Notifiee> notifiee() const = 0;
+
+  virtual void last_notifiee_is(Notifiee *n) = 0;
+
+  virtual std::string name() const { return _name; }
 
 protected:
-    Activity(const std::string &name, ActivityManager *activity_manager):
-        _name(name),
-        _activity_manager(manager),
-        _notifiee(NULL),
-        _status(_free) {}
-
-    Activity(const Activity&);
+  Activity(const std::string &name): _name(name) {}
+  Activity(const Activity&);
 
 private:
-    std::string _name;
-    ActivityManager *_activity_manager;
-    Notifiee *_notifiee;
-    Status _status;
+  std::string _name;
 };
 
-}
+class Activity::Manager: public Fwk::PtrInterface<Activity::Manager> {
+public:
+  typedef Fwk::Ptr<Activity::Manager> Ptr;
+
+  virtual Fwk::Ptr<Activity> activity_new(const std::string &name) = 0;
+
+  virtual Fwk::Ptr<Activity> activity(const std::string &name) const = 0;
+
+  virtual void activity_del(const std::string &name) = 0;
+
+  virtual void last_activity_is(Activity::Ptr) = 0;
+};
+
+}      /* end namespace Fwk */
 
 #endif /* LIB_CHECK50_FWK_ACTIVITY_H */
