@@ -42,6 +42,8 @@ Engine::test_is(const std::string& test_filename)
             // TODO: fix what we're catching here
         }
 
+        test->source_code_is(source_code);
+
         _test[test_filename] = test;
     }
 
