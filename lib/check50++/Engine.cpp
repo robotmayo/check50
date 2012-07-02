@@ -14,15 +14,12 @@ namespace Check50 {
 
 Engine::Engine(const std::string& name,
                std::string& source_code_file,
-               Engine::EngineMode engine_mode,
                Engine::TestFileFormat test_file_format)
   : _name(name),
     _source_code(SourceCode::SourceCodeNew(source_code_file)),
     _notifiee(NULL),
-    _engine_mode(engine_mode),
     _test_file_format(test_file_format),
     _activity_manager(ActivityManager::ActivityManagerNew("ActivityManager")) {
-
   if (test_file_format == Engine::yaml) {
     _test_file_reader = YamlTestFileReader::YamlTestFileReaderNew("name");   
   }
