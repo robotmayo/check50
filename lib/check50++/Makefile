@@ -1,3 +1,4 @@
+CXX = g++
 CXXFLAGS = -Wall -pedantic -g
 
 OBJECTS = Fwk/Exception.o Test.o TestFileReader.o Activity.o ActivityReactor.o Engine.o
