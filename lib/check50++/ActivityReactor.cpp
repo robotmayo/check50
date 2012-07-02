@@ -13,6 +13,7 @@ namespace Check50 {
       break;
     case Activity::waiting:
       // TODO: do we want to do anything here?
+      // _manager->dont_forget_about_this(activity);
       break;
     case Activity::executing:
       // TODO: implement threading!
