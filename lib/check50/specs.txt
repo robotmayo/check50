@@ -1,0 +1,13 @@
+Need to specify what is and is not supported for testing and/or run50
+Things to consider:
+Std in/out/err
+File IO / Network socket IO (basically any file descriptor operation)
+Random number generators (can manipulate srand)
+Gettimeofday / timing code
+Need to get around any macros which override default behavior of functions / system calls (like pset6)
+Forking / execing processes / IPC / Pthreads
+getpid / ppid / group id / user id
+32-bit vs 64-bit stuff (sizeof, etc.), other machine dependent syscalls/stuff
+Soft/hard resource limits
+Can't do anything with "root" unless VM
+(ptrace?)

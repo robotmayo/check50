@@ -1,0 +1,4 @@
+supporting:
+run: php source.php
+points: 4
+expected: hello
