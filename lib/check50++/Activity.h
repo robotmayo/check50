@@ -23,7 +23,7 @@ class Activity : public Fwk::PtrInterface<Activity> {
   Fwk::Ptr<class ActivityManager> manager() const { return _manager; }
 
   class Notifiee: public Fwk::BaseNotifiee<Activity> {
-  public:
+   public:
     typedef Fwk::Ptr<Notifiee> Ptr;
 
     virtual void on_status() {}
@@ -82,6 +82,22 @@ class ActivityManager : public Fwk::PtrInterface<ActivityManager> {
  public:
   typedef Fwk::Ptr<ActivityManager> Ptr;
 
+  class Notifiee : public Fwk::BaseNotifiee<ActivityManager> {
+   public:
+    typedef Fwk::Ptr<Notifiee> Ptr;
+
+    virtual void on_last_activity(Activity::Ptr activity) {}
+
+    Notifiee(ActivityManager *manager)
+      : Fwk::BaseNotifiee<ActivityManager>(manager) {}
+  };
+
+  virtual Notifiee::Ptr notifiee() const { return _notifiee; }
+  virtual void last_notifiee_is(Notifiee *n) {
+    ActivityManager *me = const_cast<ActivityManager *>(this);
+    me->_notifiee = n;
+  }
+
   virtual Activity::Ptr activity_new(const std::string& name);
   virtual Activity::Ptr activity(const std::string& name) const;
   virtual void activity_del(const std::string& name);
@@ -99,6 +115,7 @@ class ActivityManager : public Fwk::PtrInterface<ActivityManager> {
  private:
   std::priority_queue<Activity::Ptr, std::vector<Activity::Ptr>, ActivityComp> _scheduled_activity;
   std::map<std::string, Activity::Ptr> _activity;
+  Notifiee *_notifiee;
 
 };
 

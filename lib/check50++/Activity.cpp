@@ -2,6 +2,17 @@
 
 namespace Check50 {
 
+class ActivityManagerReactor : public ActivityManager::Notifiee {
+ public:
+  void on_last_activity(Activity::Ptr activity);
+
+  ActivityManagerReactor(ActivityManager *manager) : Notifiee(manager) {}
+};
+
+void ActivityManagerReactor::on_last_activity(Activity::Ptr activity) {
+
+}
+
 Activity::Ptr ActivityManager::activity_new(const std::string& name) {
   Activity::Ptr activity = _activity[name];
 
@@ -34,6 +45,10 @@ void ActivityManager::activity_del(const std::string& name) {
 
 void  ActivityManager::last_activity_is(Activity::Ptr activity) {
   _scheduled_activity.push(activity);
+
+  if (_notifiee != NULL) {
+    _notifiee->on_last_activity(activity);
+  }
 }
 
 /*void
