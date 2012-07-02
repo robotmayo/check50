@@ -2,6 +2,7 @@
 #define LIB_CHECK50_ACTIVITY_H
 
 #include <map>
+#include <set>
 #include <string>
 #include <queue>
 #include <vector>
@@ -116,8 +117,10 @@ class ActivityManager : public Fwk::PtrInterface<ActivityManager> {
 
  private:
   std::string _name;
-  std::priority_queue<Activity::Ptr, std::vector<Activity::Ptr>, ActivityComp> _scheduled_activity;
+  unsigned int _max_threads;
   std::map<std::string, Activity::Ptr> _activity;
+  std::set<std::string> _executing_activity;
+  std::priority_queue<Activity::Ptr, std::vector<Activity::Ptr>, ActivityComp> _scheduled_activity;
   Notifiee *_notifiee;
 
 };
