@@ -1,6 +1,6 @@
 CXXFLAGS = -Wall -pedantic -g
 
-OBJECTS = Fwk/Exception.o Test.o TestFileReader.o Engine.o
+OBJECTS = Fwk/Exception.o Test.o TestFileReader.o Activity.o ActivityReactor.o Engine.o
           
 TARGETS = main
 
