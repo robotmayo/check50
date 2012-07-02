@@ -18,18 +18,12 @@ public:
 
     std::string name() const { return _name; }
 
-    enum Status {
-        _incomplete,
-        _complete
-    };
-    static inline Status incomplete() { return _incomplete; }
-    static inline Status complete() { return _complete; }
-
     class Notifiee : public Fwk::BaseNotifiee<Test> {
     public:
         typedef Fwk::Ptr<Notifiee> Ptr;
 
-        virtual void on_status_is(Status s) {}
+        virtual void on_output(const std::string& output) {}
+        virtual void on_complete() {}
 
         Notifiee(Test *test) : Fwk::BaseNotifiee<Test>(test) {}
     };
@@ -40,19 +34,34 @@ public:
         me->_notifiee = n;
     }
 
-    std::string config_file() const { return _config_filename; }
-    virtual void config_filename_is(const std::string& config_filename) {
-        _config_filename = config_filename;
+    std::string source_code() const { return _source_code; }
+    virtual void source_code_is(const std::string& source_code) {
+        _source_code = source_code;
+    }
+
+    std::string compile_directive() const { return _compile_directive; }
+    virtual void compile_directive_is(const std::string& compile_directive) {
+        _compile_directive = compile_directive;
+    }
+
+    std::string execution_directive() const { return _execution_directive; }
+    virtual void execution_directive_is(const std::string& execution_directive) {
+        _execution_directive = execution_directive;
+    }
+
+    Points possible() const { return _possible; }
+    virtual void possible_is(Points possible) {
+        _possible = possible;
     }
 
     std::string output() const { return _output; }
     virtual void output_is(const std::string& output);
 
-    std::string source_code() const { return _source_code; }
-    virtual void source_code_is(const std::string& source_code);
+    Points received() const { return _received; }
+    virtual void received_is(Points received);
 
-    Status status() const { return _status; }
-    virtual void status_is(Status s);
+    std::string explanation() const { return _explanation; }
+    virtual void explanation_is(const std::string& explanation);
 
     static Test::Ptr TestNew(const std::string& name) {
         Ptr t = new Test(name);
@@ -67,18 +76,19 @@ private:
     std::string _name;
     Notifiee *_notifiee;
 
-    std::string _config_filename;
-
-    std::string _output;
-
-    Points _received, _possible;
-    std::string _explanation;
-
     std::string _source_code;
 
-    Status _status;
+    // the following are read from the file
+    std::string _compile_directive;
+    std::string _execution_directive;
+    Points _possible;
+
+    // the following are determined by the test's execution
+    std::string _output;
+    Points _received;
+    std::string _explanation;
 };
 
-}      /* end namespace */
+}      /* end namespace Check50 */
 
 #endif /* LIB_CHECK50_TEST_H */
