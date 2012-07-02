@@ -6,13 +6,11 @@
 
 namespace Check50 {
     
-Test::Ptr
-YamlTestFileReader::test_new(const std::string& test_filename)
-{
-    // parse the YAML test file
-    // ensure it has the appropriate extension
-    // find a good parsing library
-    throw new Fwk::NoImplementationException("No implementation yet!");
+Test::Ptr YamlTestFileReader::test_new(const std::string& test_filename) {
+  // parse the YAML test file
+  // ensure it has the appropriate extension
+  // find a good parsing library
+  throw new Fwk::NoImplementationException("No implementation yet!");
 }
 
 }
