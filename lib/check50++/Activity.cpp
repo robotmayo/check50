@@ -10,7 +10,15 @@ class ActivityManagerReactor : public ActivityManager::Notifiee {
 };
 
 void ActivityManagerReactor::on_last_activity(Activity::Ptr activity) {
-
+  // for now, just run the activity
+  // TODO: turn this into a threadpool
+  // if (this->notifier()->running_activity() < max_concurrent_activities) {
+  //   activity->status_is(Activity::executing);
+  // } else {
+  //   // punt; wait until a running activity ceases
+  //   activity->status_is(Activity::waiting);
+  // }
+  activity->status_is(Activity::executing);
 }
 
 Activity::Ptr ActivityManager::activity_new(const std::string& name) {
@@ -50,32 +58,5 @@ void  ActivityManager::last_activity_is(Activity::Ptr activity) {
     _notifiee->on_last_activity(activity);
   }
 }
-
-/*void
-ManagerImpl::nowIs(Time t) {
-  while (!scheduledActivities_.empty()) {
-
-    Activity::Ptr nextToRun = scheduledActivities_.top();
-
-    if (nextToRun->nextTime() > t) {
-      break;
-    }
-
-    if (managerType_ == ManagerImpl::realTime()) {
-      Time diff = Time(nextToRun->nextTime().value() - now_.value());
-      usleep((int)(diff.value() * (scalingFactor_.value() * 1000)));
-    }
-
-    now_ = nextToRun->nextTime();
-
-    scheduledActivities_.pop();
-
-    nextToRun->statusIs(Activity::executing);
-    nextToRun->statusIs(Activity::free);
-
-  }
-
-  now_ = t;
-} */
 
 } /* end namespace Check50 */
