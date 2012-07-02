@@ -18,8 +18,8 @@ main(int argc, const char *argv[])
     string name = string("engine");
     string source_code = string(argv[1]);
 
-    Engine::EngineMode mode = Engine::development();
-    Engine::TestFileFormat format = Engine::yaml();
+    Engine::EngineMode mode = Engine::development;
+    Engine::TestFileFormat format = Engine::yaml;
 
     Engine::Ptr engine = Engine::EngineNew(name, source_code, mode, format);
 
@@ -28,6 +28,8 @@ main(int argc, const char *argv[])
         //engine->test_new(argv[i]);
     }
 
+    // wait for tests to complete
+    
     // read results
 
     return 0;
