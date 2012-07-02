@@ -8,17 +8,18 @@ namespace Check50 {
 
 class ExecutionActivityReactor : public Activity::Notifiee {
  public:
-  ExecutionActivityReactor(Activity *activity,
-                           ActivityManager::Ptr manager,
+  ExecutionActivityReactor(Activity *activity, ActivityManager::Ptr manager,
                            Test::Ptr test)
-    : Notifiee(activity), _activity(activity), _manager(manager), _test(test) {}
+    : Notifiee(activity), _manager(manager), _test(test) {}
 
   void on_status();
 
  private:
-  Activity::Ptr _activity;
+  void execute();
+
   ActivityManager::Ptr _manager;
   Test::Ptr _test;
+
 };
 
 class SourceTransformationActivityReactor : public Activity::Notifiee {

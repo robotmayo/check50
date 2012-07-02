@@ -57,7 +57,7 @@ Test::Ptr Engine::test_new(const std::string& test_filename) {
   // build up an execution activity
   Activity::Ptr execution_activity = _activity_manager->activity_new(test->name());
   execution_activity->last_notifiee_is(new ExecutionActivityReactor(execution_activity.ptr(), _activity_manager, test));
-  execution_activity->status_is(Activity::waiting);
+  execution_activity->status_is(Activity::ready);
 
   _test[test_filename] = test;
 
