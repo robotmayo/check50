@@ -6,14 +6,8 @@ namespace Check50 {
 
 Test::Test(const std::string& name)
   : _name(name),
-    _notifiee(NULL),
-    _source_code(NULL),
-    _compile_directive(NULL),
-    _execution_directive(NULL),
     _possible(0.0),
-    _output(NULL),
-    _received(0.0),
-    _explanation(NULL) {}
+    _received(0.0) {}
 
 void Test::output_is(const std::string& output) {
   _output = output;
