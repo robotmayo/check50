@@ -21,6 +21,10 @@ void ActivityManagerReactor::on_last_activity(Activity::Ptr activity) {
   activity->status_is(Activity::executing);
 }
 
+ActivityManager::ActivityManager(const std::string& name) : _name(name) {
+  this->last_notifiee_is(new ActivityManagerReactor(this));
+}
+
 Activity::Ptr ActivityManager::activity_new(const std::string& name) {
   Activity::Ptr activity = _activity[name];
 

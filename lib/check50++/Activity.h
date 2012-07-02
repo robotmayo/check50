@@ -82,6 +82,8 @@ class ActivityManager : public Fwk::PtrInterface<ActivityManager> {
  public:
   typedef Fwk::Ptr<ActivityManager> Ptr;
 
+  std::string name() const { return _name; }
+
   class Notifiee : public Fwk::BaseNotifiee<ActivityManager> {
    public:
     typedef Fwk::Ptr<Notifiee> Ptr;
@@ -103,16 +105,17 @@ class ActivityManager : public Fwk::PtrInterface<ActivityManager> {
   virtual void activity_del(const std::string& name);
   virtual void last_activity_is(Activity::Ptr activity);
 
-  static ActivityManager::Ptr ActivityManagerNew() {
-    Ptr am = new ActivityManager();
+  static ActivityManager::Ptr ActivityManagerNew(const std::string& name) {
+    Ptr am = new ActivityManager(name);
     return am;
   }
 
  protected:
-  ActivityManager() {}
+  ActivityManager(const std::string& name);
   ActivityManager(const ActivityManager&);
 
  private:
+  std::string _name;
   std::priority_queue<Activity::Ptr, std::vector<Activity::Ptr>, ActivityComp> _scheduled_activity;
   std::map<std::string, Activity::Ptr> _activity;
   Notifiee *_notifiee;
