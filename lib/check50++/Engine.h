@@ -8,6 +8,7 @@
 #include "Fwk/Ptr.h"
 #include "Fwk/PtrInterface.h"
 
+#include "Activity.h"
 #include "Test.h"
 #include "TestFileReader.h"
 
@@ -38,11 +39,9 @@ public:
 
     // TODO: are these necessary?
     enum EngineMode {
-        _development,
-        _production
+        development,
+        production
     };
-    static inline EngineMode development() { return _development; }
-    static inline EngineMode production() { return _production; }
     EngineMode engine_mode() const { return _engine_mode; }
     void engine_mode_is(EngineMode engine_mode) {
         _engine_mode = engine_mode;
@@ -53,10 +52,9 @@ public:
 
     // TODO: what other formats do we want to support?
     enum TestFileFormat {
-        _yaml
+        yaml
         /* add other formats here and a corresponding static accessor below */
     };
-    static inline TestFileFormat yaml() { return _yaml; }
     TestFileFormat test_file_format() const { return _test_file_format; }
 
 
@@ -75,8 +73,7 @@ public:
     static Engine::Ptr EngineNew(const std::string& name,
                                  std::string& source_code,
                                  EngineMode& engine_mode,
-                                 TestFileFormat& test_file_format)
-    {
+                                 TestFileFormat& test_file_format) {
         Ptr e = new Engine(name, source_code, engine_mode, test_file_format);
         return e;
     }
@@ -97,6 +94,7 @@ private:
     TestFileFormat _test_file_format;
     TestFileReader::Ptr _test_file_reader;
     std::map<std::string, Test::Ptr> _test;
+    ActivityManager::Ptr _activity_manager;
 };
 
 } /* end namespace */
