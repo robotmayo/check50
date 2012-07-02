@@ -39,7 +39,7 @@ class Activity : public Fwk::PtrInterface<Activity> {
   }
 
   enum Status {
-    free, waiting, ready, executing, deleted
+    free, ready, waiting, executing, deleted
   };
 
   virtual Status status() const { return _status; }
@@ -122,4 +122,3 @@ class ActivityManager : public Fwk::PtrInterface<ActivityManager> {
 }      /* end namespace Check50 */
 
 #endif /* LIB_CHECK50_ACTIVITY_H */
-
