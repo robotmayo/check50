@@ -7,6 +7,7 @@
 #include "Fwk/Ptr.h"
 #include "Fwk/PtrInterface.h"
 
+#include "SourceCode.h"
 #include "Types.h"
 
 namespace Check50 {
@@ -34,8 +35,8 @@ public:
         me->_notifiee = n;
     }
 
-    std::string source_code() const { return _source_code; }
-    virtual void source_code_is(const std::string& source_code) {
+    SourceCode::Ptr source_code() const { return _source_code; }
+    virtual void source_code_is(const SourceCode::Ptr source_code) {
         _source_code = source_code;
     }
 
@@ -76,7 +77,7 @@ private:
     std::string _name;
     Notifiee *_notifiee;
 
-    std::string _source_code;
+    SourceCode::Ptr _source_code;
 
     // the following are read from the file
     std::string _compile_directive;

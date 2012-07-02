@@ -9,6 +9,7 @@
 #include "Fwk/PtrInterface.h"
 
 #include "Activity.h"
+#include "SourceCode.h"
 #include "Test.h"
 #include "TestFileReader.h"
 
@@ -47,8 +48,7 @@ public:
         _engine_mode = engine_mode;
     }
 
-    // TODO: should this be an object?
-    std::string source_code() const { return _source_code; }
+    SourceCode::Ptr source_code() const { return _source_code; }
 
     // TODO: what other formats do we want to support?
     enum TestFileFormat {
@@ -71,16 +71,16 @@ public:
 
     // this is the general way to create an Engine
     static Engine::Ptr EngineNew(const std::string& name,
-                                 std::string& source_code,
+                                 std::string& source_code_file,
                                  EngineMode& engine_mode,
                                  TestFileFormat& test_file_format) {
-        Ptr e = new Engine(name, source_code, engine_mode, test_file_format);
+        Ptr e = new Engine(name, source_code_file, engine_mode, test_file_format);
         return e;
     }
 
 protected:
     // defined in Engine.cpp
-    Engine(const std::string& name, std::string& source_code,
+    Engine(const std::string& name, std::string& source_code_file,
            EngineMode engine_mode, TestFileFormat test_file_format);
 
     // leave undefined so that it can't be copied
@@ -88,7 +88,7 @@ protected:
 
 private:
     std::string _name;
-    std::string _source_code;
+    SourceCode::Ptr _source_code;
     Notifiee *_notifiee;
     EngineMode _engine_mode;
     TestFileFormat _test_file_format;
