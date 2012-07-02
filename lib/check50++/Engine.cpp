@@ -21,7 +21,7 @@ Engine::Engine(const std::string& name,
     _notifiee(NULL),
     _engine_mode(engine_mode),
     _test_file_format(test_file_format),
-    _activity_manager(ActivityManager::ActivityManagerNew()) {
+    _activity_manager(ActivityManager::ActivityManagerNew("ActivityManager")) {
 
   if (test_file_format == Engine::yaml) {
     _test_file_reader = YamlTestFileReader::YamlTestFileReaderNew("name");   
