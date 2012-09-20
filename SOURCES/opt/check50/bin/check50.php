@@ -1,15 +1,15 @@
 #!/bin/env php
 <?php
 
+    // 
     $archive = new ZipArchive();
     $filename = tempnam(sys_get_temp_dir(), '');
     if ($archive->open($filename, ZIPARCHIVE::CREATE) === false) {
         // fail
     }
 
-    $paths = array();
-
     // iterate over arguments
+    $paths = array();
     for ($i = 1, $n = count($argv); $i < $n; $i++) {
 
         // file
@@ -28,13 +28,13 @@
 
         }
     }
-
     if (count($paths) === 0) {
         // fail
     }
 
     // compute length of longest common prefix
-    $prefix = strlen(_commonPath($paths));
+    // TODO: change _commonPath to return dirname for $paths[0] when count($paths) == 1
+    $prefix = strlen((count($paths) == 1) ? dirname($paths[0]) : _commonPath($paths));
 
     // add directories and files to ZIP, trimming prefix
     for ($i = 0, $n = count($paths); $i < $n; $i++) {
@@ -51,8 +51,7 @@
     // close ZIP
     $archive->close();
 
-
-
+    // POST /upload
     $file = file_get_contents($filename);
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_HEADER, false);
@@ -63,48 +62,38 @@
     ));
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $file);
-    print(strlen($file) . "\n");
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    //curl_setopt($ch, CURLOPT_URL, 'https://sandbox.cs50.net/upload');
     curl_setopt($ch, CURLOPT_URL, 'http://localhost:8080/upload');
-    curl_setopt($ch, CURLOPT_VERBOSE, true);
-    print_r(curl_exec($ch));
-    print_r(curl_getinfo($ch));
+    $response = json_decode(curl_exec($ch));
+    print_r($response);
 
 
-
-    //  http://rosettacode.org/wiki/Find_common_directory_path#PHP
-    function _commonPath($dirList)
+    // adapted from http://rosettacode.org/wiki/Find_common_directory_path#PHP
+    function _commonPath($paths)
     {
         $arr = array();
-        foreach($dirList as $i => $path)
+        foreach ($paths as $i => $path)
         {
-            $dirList[$i]    = explode('/', $path);
-            unset($dirList[$i][0]);
-     
-            $arr[$i] = count($dirList[$i]);
+            $paths[$i] = explode('/', $path);
+            unset($paths[$i][0]);
+            $arr[$i] = count($paths[$i]);
         }
-     
         $min = min($arr);
-     
-        for($i = 0; $i < count($dirList); $i++)
+        for ($i = 0, $n = count($paths); $i < $n; $i++)
         {
-            while(count($dirList[$i]) > $min)
-            {
-                array_pop($dirList[$i]);
-            }
-     
-            $dirList[$i] = '/' . implode('/' , $dirList[$i]);
+            while (count($paths[$i]) > $min)
+                array_pop($paths[$i]);
+            $paths[$i] = '/' . implode('/', $paths[$i]);
         }
-     
-        $dirList = array_unique($dirList);
-        while(count($dirList) !== 1)
+        $paths = array_unique($paths);
+        while (count($paths) !== 1)
         {
-            $dirList = array_map('dirname', $dirList);
-            $dirList = array_unique($dirList);
+            $paths = array_map('dirname', $paths);
+            $paths = array_unique($paths);
         }
-        reset($dirList);
-     
-        return current($dirList);
+        reset($paths);
+        return current($paths);
     }
 
 ?>
