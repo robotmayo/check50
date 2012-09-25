@@ -1,7 +1,7 @@
 #!/bin/env php
 <?php
 
-    // 
+    // create ZIP
     $archive = new ZipArchive();
     $filename = tempnam(sys_get_temp_dir(), '');
     if ($archive->open($filename, ZIPARCHIVE::CREATE) === false) {
@@ -56,26 +56,54 @@
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_HEADER, false);
     curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-     'Content-length: ' . strlen($file),
-     'Content-type: application/zip',
-     'Content-Transfer-Encoding: binary'
+     "Content-length: " . strlen($file),
+     "Content-type: application/zip",
+     "Content-Transfer-Encoding: binary"
     ));
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $file);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    //curl_setopt($ch, CURLOPT_URL, 'https://sandbox.cs50.net/upload');
-    curl_setopt($ch, CURLOPT_URL, 'http://localhost:8080/upload');
+    //curl_setopt($ch, CURLOPT_URL, "https://sandbox.cs50.net/upload");
+    curl_setopt($ch, CURLOPT_URL, "http://localhost:8080/upload");
     $response = json_decode(curl_exec($ch));
+
+    // check for error
+    if (is_null($response)) {
+        print("Upload failed.\n");
+        exit(1);
+    }
+    else if (isset($response->error)) {
+        print("Upload failed: " . $response->error->message . "\n");
+        exit(1);
+    }
+    print "Uploaded.\n";
+
+    // POST /check
+    print_r($response);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_HEADER, false);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+     "Content-type: application/json"
+    ));
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array(
+     "homedir" => $response->id,
+     "checks" => '2012/pset1/mario'
+    )));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    //curl_setopt($ch, CURLOPT_URL, "https://sandbox.cs50.net/check");
+    curl_setopt($ch, CURLOPT_URL, "http://localhost:8080/check");
+    $response = curl_exec($ch);
     print_r($response);
 
-
+    
     // adapted from http://rosettacode.org/wiki/Find_common_directory_path#PHP
     function _commonPath($paths)
     {
         $arr = array();
         foreach ($paths as $i => $path)
         {
-            $paths[$i] = explode('/', $path);
+            $paths[$i] = explode("/", $path);
             unset($paths[$i][0]);
             $arr[$i] = count($paths[$i]);
         }
@@ -84,12 +112,12 @@
         {
             while (count($paths[$i]) > $min)
                 array_pop($paths[$i]);
-            $paths[$i] = '/' . implode('/', $paths[$i]);
+            $paths[$i] = "/" . implode("/", $paths[$i]);
         }
         $paths = array_unique($paths);
         while (count($paths) !== 1)
         {
-            $paths = array_map('dirname', $paths);
+            $paths = array_map("dirname", $paths);
             $paths = array_unique($paths);
         }
         reset($paths);
