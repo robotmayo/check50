@@ -217,23 +217,37 @@ async.waterfall([
 
 }], function(err, results) {
 
+    // report results
     if (err !== null) {
         process.stdout.write(' Error: ' + err.message + '.\n');
         process.exit(1);
     }
     else {
+
+        // iterate over checks
         for (check in results) {
+
+            // report passed check in green
             if (results[check].result === true) {
-                process.stdout.write('\033[32m');
-                process.stdout.write(':-) ' + results[check].description + '\n');
-                process.stdout.write('\033[39m');
+                process.stdout.write('\033[32m'); // green
+                process.stdout.write(':) ' + results[check].description + '\n');
+                process.stdout.write('\033[39m'); // default
             }
+
+            // report failed dependency in yellow
+            else if (results[check].result === null) {
+                process.stdout.write('\033[33m'); // yellow
+                process.stdout.write(':| ' + results[check].description + '\n');
+                process.stdout.write('\033[39m'); // default
+            }
+
+            // report failed check in red
             else {
-                process.stdout.write('\033[31m');
-                process.stdout.write('    ' + results[check].description + '\n');
-                process.stdout.write('\033[39m');
+                process.stdout.write('\033[31m'); // red
+                process.stdout.write(':( ' + results[check].description + '\n');
+                process.stdout.write('\033[39m'); // default
             }
-            console.log(results[check].result);
+
         }
     }
 
