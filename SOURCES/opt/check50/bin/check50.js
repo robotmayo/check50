@@ -142,10 +142,11 @@ request.on('error', function(err) {
 
 var s = zip.generate({ base64: false, compression:'DEFLATE' });
 fs.writeFile('test.zip', s, 'binary');
+var b = new Buffer(s, 'binary');
 request.post({
- body: s,
+ body: b,
  headers: {
-  'Content-Length': s.length,
+  'Content-Length': b.length,
   'Content-Type': 'application/zip',
   'Content-Transfer-Encoding': 'binary'
  },
@@ -155,7 +156,7 @@ request.post({
     console.log(body);
 
 });
-console.log(s.length);
+console.log(b.length);
 
 
 // TODO: handle ECONNREFUSED
