@@ -1,3 +1,4 @@
+#!/bin/env nodejs
 // 
 // This is CS50 Check.
 //
@@ -120,13 +121,15 @@ _.each(paths, function(p) {
 
 });
 
+// check!
 async.waterfall([
 
     // POST /upload
     function(callback) {
-        var homedir;
-        var buffer = new Buffer(zip.generate({ base64: false, compression:'DEFLATE' }), 'binary');
+
+        // upload ZIP
         process.stdout.write('Uploading.');
+        var buffer = new Buffer(zip.generate({ base64: false, compression:'DEFLATE' }), 'binary');
         var interval = setInterval(function() {
             process.stdout.write('.');
         }, 500);
@@ -138,34 +141,39 @@ async.waterfall([
           'Content-Transfer-Encoding': 'binary'
          },
          uri: 'http://192.168.74.135:8080/upload'
+
         }, function(err, response, body) {
 
+            // handle response
             clearInterval(interval);
             process.stdout.write(' Uploaded.\n');
-
             if (err === null) {
                 var response = JSON.parse(body);
                 if (!_.isUndefined(response.id)) {
                     callback(null, response.id);
                 }
+                else if (!_.isUndefined(response.error)) {
+                    callback(new Error(response.error));
+                }
                 else {
-                    callback('missing id');
+                    callback(new Error('Invalid response from server'));
                 }
             }
             else {
                 callback(err);
             }
+
         });
     },
 
     // POST /check
     function(id, callback) {
 
+        // run checks
         process.stdout.write('Checking.');
         var interval = setInterval(function() {
             process.stdout.write('.');
         }, 500);
-
         request.post({
          form: {
           checks: '2012/pset1/mario',
@@ -175,16 +183,58 @@ async.waterfall([
           'Content-Type': 'application/json'
          },
          uri: 'http://192.168.74.135:8080/check'
+
         }, function(err, response, body) {
+
+            // handle response
             clearInterval(interval);
-            process.stdout.write(' Checked.\n');
-            callback(err, body);
+            if (err !== null) {
+                callback(err);
+            }
+            else {
+
+                // parse response
+                var response;
+                try {
+                    response = JSON.parse(body);
+                }
+                catch (e) {
+                    callback(e);
+                }
+                if (!_.isUndefined(response.error)) {
+                    callback(new Error(response.error));
+                }
+                else if (/*_.isUndefined(response.id) || */ _.isUndefined(response.results)) {
+                    callback(new Error('invalid response from server'));
+                }
+                else {
+                    process.stdout.write(' Checked.\n');
+                    callback(null, response.results);
+                }
+            }
+
         });
 
-}], function(err, result) {
+}], function(err, results) {
 
-    if (err === null) {
-        console.log(result);
+    if (err !== null) {
+        process.stdout.write(' ' + err.message + '\n');
+        process.exit(1);
+    }
+    else {
+        for (check in results) {
+            if (results[check].result === true) {
+                process.stdout.write('\033[32m');
+                process.stdout.write(':-) ' + results[check].description + '\n');
+                process.stdout.write('\033[39m');
+            }
+            else {
+                process.stdout.write('\033[31m');
+                process.stdout.write('    ' + results[check].description + '\n');
+                process.stdout.write('\033[39m');
+            }
+            console.log(results[check].result);
+        }
     }
 
 });
