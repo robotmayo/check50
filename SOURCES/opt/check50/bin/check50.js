@@ -5,11 +5,11 @@
 // malan@harvard.edu
 //
 
-var AdmZip = require("adm-zip");
 var argv = require('optimist').alias('h', 'help').argv;
 var fs = require('fs');
 var http = require('http');
 var https = require('https');
+var JSZip = require('node-zip');
 var path = require('path');
 var request = require('request');
 var _ = require('underscore');
@@ -86,7 +86,8 @@ var prefix = new RegExp('^' + (function() {
     return first.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1");
 })());
 
-var zip = new require('node-zip')();
+// create ZIP
+var zip = new JSZip();
 
 // iterate over paths
 _.each(paths, function(p) {
@@ -102,22 +103,14 @@ _.each(paths, function(p) {
     // add path to ZIP
     var stats = fs.statSync(p);
     if (stats.isDirectory()) {
-        //zip.addFile(path.join(suffix, '/'), []); // using addFile because addLocalFile trims leading directory
         zip.folder(path.join(suffix, '/'));
     }
     else if (stats.isFile()) {
-        //zip.addFile(suffix, fs.readFileSync(p));
         zip.file(suffix, fs.readFileSync(p).toString('binary'));
-        //zip.file(suffix, "here");
     }
-    console.log('added: ' + suffix);
 
 });
 
-//var s = zip.toBuffer().toString();
-
-var data = zip.generate({base64:false,compression:'DEFLATE'});
-fs.writeFile('test.zip', data, 'binary');
 
 /*
 var request = http.request({
@@ -147,12 +140,12 @@ request.on('error', function(err) {
 });
 */
 
-/*
-zip.writeZip('test.zip');
-
+var s = zip.generate({ base64: false, compression:'DEFLATE' });
+fs.writeFile('test.zip', s, 'binary');
 request.post({
- body: zip.toBuffer(),
+ body: s,
  headers: {
+  'Content-Length': s.length,
   'Content-Type': 'application/zip',
   'Content-Transfer-Encoding': 'binary'
  },
@@ -162,10 +155,10 @@ request.post({
     console.log(body);
 
 });
+console.log(s.length);
 
 
 // TODO: handle ECONNREFUSED
 
 //request.write(s);
 //request.end();
-*/
