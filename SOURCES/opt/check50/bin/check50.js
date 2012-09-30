@@ -10,7 +10,7 @@
 var VERSION = 1;
 
 // modules
-var argv = require('optimist').alias('h', 'help').alias('v', 'version').argv;
+var argv = require('optimist').alias('c', 'checks').alias('h', 'help').alias('v', 'version').argv;
 var async = require('async');
 var child_process = require('child_process');
 var fs = require('fs');
@@ -23,8 +23,8 @@ var _ = require('underscore');
 var wrench = require('wrench');
 
 // -h, --help
-if (argv._.length === 0 || !_.isUndefined(argv.h)) {
-    console.log('Usage: check50 path [path ...]');
+if (argv._.length === 0 || _.isUndefined(argv.c) || !_.isUndefined(argv.h)) {
+    console.log('Usage: check50 -c checks path [path ...]');
     process.exit(0);
 }
 
@@ -146,10 +146,10 @@ async.waterfall([
 
             // handle response
             clearInterval(interval);
-            process.stdout.write(' Uploaded.\n');
             if (err === null) {
                 var response = JSON.parse(body);
                 if (!_.isUndefined(response.id)) {
+                    process.stdout.write(' Uploaded.\n');
                     callback(null, response.id);
                 }
                 else if (!_.isUndefined(response.error)) {
@@ -176,7 +176,7 @@ async.waterfall([
         }, 500);
         request.post({
          form: {
-          checks: '2012/pset1/mario',
+          checks: argv.c,
           homedir: id
          },
          headers: {
@@ -202,7 +202,7 @@ async.waterfall([
                     callback(e);
                 }
                 if (!_.isUndefined(response.error)) {
-                    callback(new Error(response.error));
+                    callback(new Error(response.error.message));
                 }
                 else if (/*_.isUndefined(response.id) || */ _.isUndefined(response.results)) {
                     callback(new Error('invalid response from server'));
@@ -218,7 +218,7 @@ async.waterfall([
 }], function(err, results) {
 
     if (err !== null) {
-        process.stdout.write(' ' + err.message + '\n');
+        process.stdout.write(' Error: ' + err.message + '.\n');
         process.exit(1);
     }
     else {
