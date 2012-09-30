@@ -193,29 +193,29 @@ async.waterfall([
             }
             else {
 
-                // parse response
-                var response;
+                // parse body
+                var payload;
                 try {
-                    response = JSON.parse(body);
+                    payload = JSON.parse(body);
                 }
                 catch (e) {
                     callback(e);
                 }
-                if (!_.isUndefined(response.error)) {
-                    callback(new Error(response.error.message));
+                if (!_.isUndefined(payload.error)) {
+                    callback(new Error(payload.error.message));
                 }
-                else if (/*_.isUndefined(response.id) || */ _.isUndefined(response.results)) {
+                else if (_.isUndefined(payload.id) || _.isUndefined(payload.results)) {
                     callback(new Error('invalid response from server'));
                 }
                 else {
                     process.stdout.write(' Checked.\n');
-                    callback(null, response.results);
+                    callback(null, payload.id, payload.results);
                 }
             }
 
         });
 
-}], function(err, results) {
+}], function(err, id, results) {
 
     // report results
     if (err !== null) {
@@ -249,6 +249,10 @@ async.waterfall([
             }
 
         }
+        process.stdout.write('https://check.cs50.net/?check=' + id + '\n');
     }
+
+    // This was CS50 Check.
+    process.exit(0);
 
 });
