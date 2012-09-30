@@ -5,7 +5,13 @@
 // malan@harvard.edu
 //
 
-var argv = require('optimist').alias('h', 'help').argv;
+// version
+var VERSION = 1;
+
+// modules
+var argv = require('optimist').alias('h', 'help').alias('v', 'version').argv;
+var async = require('async');
+var child_process = require('child_process');
 var fs = require('fs');
 var http = require('http');
 var https = require('https');
@@ -15,14 +21,17 @@ var request = require('request');
 var _ = require('underscore');
 var wrench = require('wrench');
 
-// ensure proper usage
+// -h, --help
 if (argv._.length === 0 || !_.isUndefined(argv.h)) {
     console.log('Usage: check50 path [path ...]');
-    process.exit(1);
+    process.exit(0);
 }
 
-// create ZIP
-//var zip = new AdmZip();
+// -v, --version
+if (!_.isUndefined(argv.v)) {
+    console.log(VERSION);
+    process.exit(0);
+}
 
 // prepare to union paths
 var paths = [];
@@ -106,60 +115,76 @@ _.each(paths, function(p) {
         zip.folder(path.join(suffix, '/'));
     }
     else if (stats.isFile()) {
-        zip.file(suffix, fs.readFileSync(p).toString('binary'));
+        zip.file(suffix, fs.readFileSync(p).toString());
     }
 
 });
 
+async.waterfall([
 
-/*
-var request = http.request({
- headers: {
-  'Content-Length': s.length,
-  'Content-Type': 'Content-type: application/zip',
-  'Content-Transfer-Encoding': 'binary'
- },
- host: '192.168.74.135',
- port: 8080,
- path: '/upload',
- method: 'POST'
-}, function(response) {
+    // POST /upload
+    function(callback) {
+        var homedir;
+        var buffer = new Buffer(zip.generate({ base64: false, compression:'DEFLATE' }), 'binary');
+        process.stdout.write('Uploading.');
+        var interval = setInterval(function() {
+            process.stdout.write('.');
+        }, 500);
+        request.post({
+         body: buffer,
+         headers: {
+          'Content-Length': buffer.length,
+          'Content-Type': 'application/zip',
+          'Content-Transfer-Encoding': 'binary'
+         },
+         uri: 'http://192.168.74.135:8080/upload'
+        }, function(err, response, body) {
 
-    var chunks = [];
-    response.on('data', function(chunk) {
-        chunks.push(chunk.toString());
-    });
-    response.on('end', function(chunk) {
-        console.log(chunks.join(''));
-    });
+            clearInterval(interval);
+            process.stdout.write(' Uploaded.\n');
+
+            if (err === null) {
+                var response = JSON.parse(body);
+                if (!_.isUndefined(response.id)) {
+                    callback(null, response.id);
+                }
+                else {
+                    callback('missing id');
+                }
+            }
+            else {
+                callback(err);
+            }
+        });
+    },
+
+    // POST /check
+    function(id, callback) {
+
+        process.stdout.write('Checking.');
+        var interval = setInterval(function() {
+            process.stdout.write('.');
+        }, 500);
+
+        request.post({
+         form: {
+          checks: '2012/pset1/mario',
+          homedir: id
+         },
+         headers: {
+          'Content-Type': 'application/json'
+         },
+         uri: 'http://192.168.74.135:8080/check'
+        }, function(err, response, body) {
+            clearInterval(interval);
+            process.stdout.write(' Checked.\n');
+            callback(err, body);
+        });
+
+}], function(err, result) {
+
+    if (err === null) {
+        console.log(result);
+    }
 
 });
-
-request.on('error', function(err) {
-    console.log(err);
-});
-*/
-
-var s = zip.generate({ base64: false, compression:'DEFLATE' });
-fs.writeFile('test.zip', s, 'binary');
-var b = new Buffer(s, 'binary');
-request.post({
- body: b,
- headers: {
-  'Content-Length': b.length,
-  'Content-Type': 'application/zip',
-  'Content-Transfer-Encoding': 'binary'
- },
- uri: 'http://192.168.74.135:8080/upload'
-}, function(err, response, body) {
-
-    console.log(body);
-
-});
-console.log(b.length);
-
-
-// TODO: handle ECONNREFUSED
-
-//request.write(s);
-//request.end();
