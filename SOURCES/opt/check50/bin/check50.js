@@ -1,7 +1,17 @@
+// 
+// This is CS50 Check.
+//
+// David J. Malan
+// malan@harvard.edu
+//
+
 var AdmZip = require("adm-zip");
 var argv = require('optimist').alias('h', 'help').argv;
 var fs = require('fs');
+var http = require('http');
+var https = require('https');
 var path = require('path');
+var request = require('request');
 var _ = require('underscore');
 var wrench = require('wrench');
 
@@ -11,7 +21,8 @@ if (argv._.length === 0 || !_.isUndefined(argv.h)) {
     process.exit(1);
 }
 
-var zip = new AdmZip();
+// create ZIP
+//var zip = new AdmZip();
 
 // prepare to union paths
 var paths = [];
@@ -75,6 +86,8 @@ var prefix = new RegExp('^' + (function() {
     return first.replace(/([.?*+^$[\]\\(){}|-])/g, "\\$1");
 })());
 
+var zip = new require('node-zip')();
+
 // iterate over paths
 _.each(paths, function(p) {
 
@@ -89,11 +102,70 @@ _.each(paths, function(p) {
     // add path to ZIP
     var stats = fs.statSync(p);
     if (stats.isDirectory()) {
-        zip.addFile(path.join(suffix, '/'), []); // using addFile because addLocalFile trims leading directory
+        //zip.addFile(path.join(suffix, '/'), []); // using addFile because addLocalFile trims leading directory
+        zip.folder(path.join(suffix, '/'));
     }
     else if (stats.isFile()) {
-        zip.addFile(suffix, fs.readFileSync(p));
+        //zip.addFile(suffix, fs.readFileSync(p));
+        zip.file(suffix, fs.readFileSync(p).toString('binary'));
+        //zip.file(suffix, "here");
     }
+    console.log('added: ' + suffix);
 
 });
 
+//var s = zip.toBuffer().toString();
+
+var data = zip.generate({base64:false,compression:'DEFLATE'});
+fs.writeFile('test.zip', data, 'binary');
+
+/*
+var request = http.request({
+ headers: {
+  'Content-Length': s.length,
+  'Content-Type': 'Content-type: application/zip',
+  'Content-Transfer-Encoding': 'binary'
+ },
+ host: '192.168.74.135',
+ port: 8080,
+ path: '/upload',
+ method: 'POST'
+}, function(response) {
+
+    var chunks = [];
+    response.on('data', function(chunk) {
+        chunks.push(chunk.toString());
+    });
+    response.on('end', function(chunk) {
+        console.log(chunks.join(''));
+    });
+
+});
+
+request.on('error', function(err) {
+    console.log(err);
+});
+*/
+
+/*
+zip.writeZip('test.zip');
+
+request.post({
+ body: zip.toBuffer(),
+ headers: {
+  'Content-Type': 'application/zip',
+  'Content-Transfer-Encoding': 'binary'
+ },
+ uri: 'http://192.168.74.135:8080/upload'
+}, function(err, response, body) {
+
+    console.log(body);
+
+});
+
+
+// TODO: handle ECONNREFUSED
+
+//request.write(s);
+//request.end();
+*/
