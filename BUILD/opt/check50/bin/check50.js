@@ -7,7 +7,7 @@
 //
 
 // version
-var VERSION = 1;
+var VERSION = 1.1;
 
 // modules
 var argv = require('../lib/node_modules/optimist').alias('c', 'checks').alias('h', 'help').alias('v', 'version').argv;
@@ -147,20 +147,29 @@ async.waterfall([
             // handle response
             clearInterval(interval);
             if (err === null) {
-                var response = JSON.parse(body);
-                if (!_.isUndefined(response.id)) {
-                    process.stdout.write(' Uploaded.\n');
-                    callback(null, response.id);
+
+                // parse body
+                var payload;
+                try {
+                    payload = JSON.parse(body);
                 }
-                else if (!_.isUndefined(response.error)) {
-                    callback(new Error(response.error));
+                catch (e) {
+                    return callback(new Error(e));
+                }
+                if (!_.isUndefined(payload.id)) {
+                    process.stdout.write(' Uploaded.\n');
+                    return callback(null, payload.id);
+                }
+                else if (!_.isUndefined(payload.error)) {
+                    callback(new Error(payload.error));
                 }
                 else {
-                    callback(new Error('Invalid response from server'));
+                    return callback(new Error('Invalid response from server'));
                 }
+
             }
             else {
-                callback(err);
+                return callback(err);
             }
 
         });
@@ -199,17 +208,17 @@ async.waterfall([
                     payload = JSON.parse(body);
                 }
                 catch (e) {
-                    callback(e);
+                    return callback(e);
                 }
                 if (!_.isUndefined(payload.error)) {
-                    callback(new Error(payload.error.message));
+                    return callback(new Error(payload.error.message));
                 }
                 else if (_.isUndefined(payload.id) || _.isUndefined(payload.results)) {
-                    callback(new Error('invalid response from server'));
+                    return callback(new Error('invalid response from server'));
                 }
                 else {
                     process.stdout.write(' Checked.\n');
-                    callback(null, payload.id, payload.results);
+                    return callback(null, payload.id, payload.results);
                 }
             }
 
@@ -219,7 +228,7 @@ async.waterfall([
 
     // report results
     if (err !== null) {
-        process.stdout.write(' Error: ' + err.message + '.\n');
+        process.stdout.write(' An error occurred.\n');
         process.exit(1);
     }
     else {
