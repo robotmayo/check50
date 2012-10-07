@@ -7,7 +7,7 @@
 //
 
 // version
-var VERSION = 1.5;
+var VERSION = 1.6;
 
 // endpoint
 var ENDPOINT = 'https://sandbox.cs50.net';
@@ -303,6 +303,12 @@ async.waterfall([
                 process.stdout.write(':( ' + results[check].description + '\n');
                 process.stdout.write('\033[39m'); // default
 
+                // check for error
+                if (!_.isUndefined(results[check].error)) {
+                    process.stdout.write('   \\ ' + results[check].error + '\n');
+                    continue;
+                }
+ 
                 // check for script
                 if (_.isUndefined(results[check].script)) {
                     continue;
