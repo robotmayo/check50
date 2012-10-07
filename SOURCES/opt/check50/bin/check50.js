@@ -7,7 +7,10 @@
 //
 
 // version
-var VERSION = 1.1;
+var VERSION = 1.2;
+
+// endpoint
+var ENDPOINT = 'http://192.168.74.135:8080';
 
 // modules
 var argv = require('../lib/node_modules/optimist').alias('c', 'checks').alias('h', 'help').alias('v', 'version').argv;
@@ -128,7 +131,7 @@ async.waterfall([
     function(callback) {
 
         // upload ZIP
-        process.stdout.write('Uploading.');
+        process.stdout.write('Uploading..');
         var buffer = new Buffer(zip.generate({ base64: false, compression:'DEFLATE' }), 'binary');
         var interval = setInterval(function() {
             process.stdout.write('.');
@@ -140,7 +143,7 @@ async.waterfall([
           'Content-Type': 'application/zip',
           'Content-Transfer-Encoding': 'binary'
          },
-         uri: 'https://sandbox.cs50.net/upload'
+         uri: ENDPOINT + '/upload'
 
         }, function(err, response, body) {
 
@@ -179,7 +182,7 @@ async.waterfall([
     function(id, callback) {
 
         // run checks
-        process.stdout.write('Checking.');
+        process.stdout.write('Checking..');
         var interval = setInterval(function() {
             process.stdout.write('.');
         }, 500);
@@ -191,7 +194,7 @@ async.waterfall([
          headers: {
           'Content-Type': 'application/json'
          },
-         uri: 'https://sandbox.cs50.net/check'
+         uri: ENDPOINT + '/check'
 
         }, function(err, response, body) {
 
@@ -228,7 +231,22 @@ async.waterfall([
 
     // report results
     if (err !== null) {
-        process.stdout.write(' An error occurred.\n');
+        process.stdout.write(' Error.\n');
+        switch (err.code) {
+
+            case 'ECONNREFUSED':
+                process.stdout.write('Could not reach server.');
+                break;
+
+            case 'ECONNRESET':
+                process.stdout.write('Connection to server died.');
+                break;
+
+            default:
+                process.stdout.write('An error occurred.');
+                console.log(err);
+        }
+        process.stdout.write('\n');
         process.exit(1);
     }
     else {
@@ -238,26 +256,84 @@ async.waterfall([
 
             // report passed check in green
             if (results[check].result === true) {
+
+                // :)
                 process.stdout.write('\033[32m'); // green
                 process.stdout.write(':) ' + results[check].description + '\n');
                 process.stdout.write('\033[39m'); // default
+
             }
 
             // report failed dependency in yellow
             else if (results[check].result === null) {
+
+                // :|
                 process.stdout.write('\033[33m'); // yellow
                 process.stdout.write(':| ' + results[check].description + '\n');
                 process.stdout.write('\033[39m'); // default
+                process.stdout.write('   \\ can\'t check until a frown turns upside down\n');
+
             }
 
             // report failed check in red
             else {
+
+                // :( 
                 process.stdout.write('\033[31m'); // red
                 process.stdout.write(':( ' + results[check].description + '\n');
                 process.stdout.write('\033[39m'); // default
-            }
 
+                // mismatch is always at end of script
+                var script = results[check].script[results[check].script.length - 1];
+
+                // explain mismatch
+                switch (script.expected.type) {
+
+                    // exists
+                    case 'exists':
+                        process.stdout.write('   \\ expected ' + script.expected.value + ' to exist\n');
+                        break;
+
+                    // exit, stderr, stdin, stdout
+                    default:
+                        if (!_.isUndefined(script.actual)) {
+                            switch (script.actual.type) {
+
+                                // exit
+                                case 'exit':
+                                    process.stdout.write('   \\ wasn\'t expecting an exit code of ' + script.actual.value + '\n');
+                                    break;
+
+                                // stdin
+                                case 'stdin':
+                                    process.stdout.write('   \\ wasn\'t expecting to be prompted for input\n');
+                                    break;
+
+                                // stderr, stdout
+                                case 'stderr':
+                                case 'stdout':
+
+                                    // display up to 50 characters
+                                    var string = JSON.stringify(script.actual.value);
+                                    var substring = string.substring(0, 50);
+                                    process.stdout.write('   \\ wasn\'t expecting ' + substring);
+                                    if (substring.length < string.length) {
+                                        process.stdout.write('..."');
+                                    }
+                                    if (script.actual.type === 'stderr') {
+                                        process.stdout.write(' on stderr');
+                                    }
+                                    process.stdout.write('\n');
+                                    break;
+
+                            }
+                        }
+                }
+
+            }
         }
+
+        // diagnostics
         process.stdout.write('https://check.cs50.net/?check=' + id + '\n');
     }
 
