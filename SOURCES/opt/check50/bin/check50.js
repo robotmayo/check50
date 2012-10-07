@@ -7,10 +7,10 @@
 //
 
 // version
-var VERSION = 1.2;
+var VERSION = 1.3;
 
 // endpoint
-var ENDPOINT = 'http://192.168.74.135:8080';
+var ENDPOINT = 'https://sandbox.cs50.net';
 
 // modules
 var argv = require('../lib/node_modules/optimist').alias('c', 'checks').alias('h', 'help').alias('v', 'version').argv;
@@ -25,15 +25,15 @@ var request = require('request');
 var _ = require('../lib/node_modules/underscore');
 var wrench = require('../lib/node_modules/wrench');
 
-// -h, --help
-if (argv._.length === 0 || _.isUndefined(argv.c) || !_.isUndefined(argv.h)) {
-    console.log('Usage: check50 -c checks path [path ...]');
-    process.exit(0);
-}
-
 // -v, --version
 if (!_.isUndefined(argv.v)) {
     console.log(VERSION);
+    process.exit(0);
+}
+
+// -h, --help
+if (argv._.length === 0 || _.isUndefined(argv.c) || !_.isUndefined(argv.h)) {
+    console.log('Usage: check50 -c checks path [path ...]');
     process.exit(0);
 }
 
@@ -103,6 +103,7 @@ var prefix = new RegExp('^' + (function() {
 var zip = new JSZip();
 
 // iterate over paths
+process.stdout.write('Compressing...');
 _.each(paths, function(p) {
 
     // trim prefix
@@ -119,10 +120,24 @@ _.each(paths, function(p) {
         zip.folder(path.join(suffix, '/'));
     }
     else if (stats.isFile()) {
-        zip.file(suffix, fs.readFileSync(p).toString());
+        try {
+            zip.file(suffix, fs.readFileSync(p).toString());
+        }
+        catch (e) {
+            process.stdout.write(' Error.\n');
+            switch (e.code) {
+
+                case 'EACCES':
+                    process.stdout.write('could not read file');
+                    break;
+            }
+            process.stdout.write('\n');
+            process.exit(1);
+        }
     }
 
 });
+process.stdout.write(' Compressed.\n');
 
 // check!
 async.waterfall([
@@ -318,9 +333,9 @@ async.waterfall([
                                 case 'stderr':
                                 case 'stdout':
 
-                                    // display up to 50 characters
+                                    // display up to 40 characters
                                     var string = JSON.stringify(script.actual.value);
-                                    var substring = string.substring(0, 50);
+                                    var substring = string.substring(0, 40);
                                     process.stdout.write('   \\ wasn\'t expecting ' + substring);
                                     if (substring.length < string.length) {
                                         process.stdout.write('..."');

@@ -1,7 +1,7 @@
 ############################################################################
 Summary: Command-line interface to CS50 Check.
 Name: check50
-Version: 1.1
+Version: 1.3
 Release: 0
 License: CC BY-NC-SA 3.0
 Group: Applications/Productivity
@@ -42,7 +42,7 @@ rm -rf %{buildroot}
 mkdir -p %{buildroot}/opt/check50
 cp -a %{_builddir}/* %{buildroot}/
 mkdir -p %{buildroot}%{_bindir}
-ln -s /opt/%{name}/bin/%{name}.js %{buildroot}%{_bindir}/%{name}
+ln -s /opt/%{name}/bin/%{name} %{buildroot}%{_bindir}/%{name}
 
 
 ############################################################################
