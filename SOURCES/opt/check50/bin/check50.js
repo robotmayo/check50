@@ -7,7 +7,7 @@
 //
 
 // version
-var VERSION = 1.3;
+var VERSION = 1.5;
 
 // endpoint
 var ENDPOINT = 'https://sandbox.cs50.net';
@@ -303,53 +303,90 @@ async.waterfall([
                 process.stdout.write(':( ' + results[check].description + '\n');
                 process.stdout.write('\033[39m'); // default
 
+                // check for script
+                if (_.isUndefined(results[check].script)) {
+                    continue;
+                }
+
                 // mismatch is always at end of script
                 var script = results[check].script[results[check].script.length - 1];
 
                 // explain mismatch
-                switch (script.expected.type) {
+                if (!_.isUndefined(script.expected)) {
+                    switch (script.expected.type) {
 
-                    // exists
-                    case 'exists':
-                        process.stdout.write('   \\ expected ' + script.expected.value + ' to exist\n');
-                        break;
-
-                    // exit, stderr, stdin, stdout
-                    default:
-                        if (!_.isUndefined(script.actual)) {
-                            switch (script.actual.type) {
-
-                                // exit
-                                case 'exit':
-                                    process.stdout.write('   \\ wasn\'t expecting an exit code of ' + script.actual.value + '\n');
-                                    break;
-
-                                // stdin
-                                case 'stdin':
-                                    process.stdout.write('   \\ wasn\'t expecting to be prompted for input\n');
-                                    break;
-
-                                // stderr, stdout
-                                case 'stderr':
-                                case 'stdout':
-
-                                    // display up to 40 characters
-                                    var string = JSON.stringify(script.actual.value);
+                        // diff
+                        case 'diff':
+                            var expected = script.expected.value.replace(/\n$/, '').split(/\n/);
+                            var actual = script.actual.value.replace(/\n$/, '').split(/\n/);
+                            for (var i = 0; i < expected.length; i++) {
+                                if (i >= actual.length || expected[i] !== actual[i]) {
+                                    var string = JSON.stringify(expected[i]);
                                     var substring = string.substring(0, 40);
-                                    process.stdout.write('   \\ wasn\'t expecting ' + substring);
-                                    if (substring.length < string.length) {
-                                        process.stdout.write('..."');
-                                    }
-                                    if (script.actual.type === 'stderr') {
-                                        process.stdout.write(' on stderr');
-                                    }
-                                    process.stdout.write('\n');
+                                    process.stdout.write('   \\ expected ' + substring + ' on line ' + (i + 1) + '\n');
                                     break;
-
+                                }
                             }
-                        }
-                }
+                            if (actual.length > expected.length) {
+                                var string = JSON.stringify(actual[expected.length]);
+                                var substring = string.substring(0, 40);
+                                process.stdout.write('   \\ wasn\'t expecting ' + substring + ' on line ' + (expected.length + 1) + '\n');
+                            }
+                            break;
 
+                        // exists
+                        case 'exists':
+                            process.stdout.write('   \\ expected ' + script.expected.value + ' to exist\n');
+                            break;
+
+                        // exit, stderr, stdin, stdout
+                        default:
+                            if (!_.isUndefined(script.actual)) {
+                                switch (script.actual.type) {
+
+                                    // exit
+                                    case 'exit':
+                                        process.stdout.write('   \\ wasn\'t expecting an exit code of ' + script.actual.value + '\n');
+                                        break;
+
+                                    // stdin
+                                    case 'stdin':
+                                        process.stdout.write('   \\ wasn\'t expecting to be prompted for input\n');
+                                        break;
+
+                                    // stderr, stdout
+                                    case 'stderr':
+                                    case 'stdout':
+
+                                        // display up to 40 characters
+                                        var string = JSON.stringify(script.actual.value);
+                                        var substring = string.substring(0, 40);
+                                        process.stdout.write('   \\ wasn\'t expecting ' + substring);
+                                        if (substring.length < string.length) {
+                                            process.stdout.write('..."');
+                                        }
+                                        if (script.actual.type === 'stderr') {
+                                            process.stdout.write(' on stderr');
+                                        }
+                                        process.stdout.write('\n');
+                                        break;
+
+                                }
+                            }
+                    }
+
+                }
+                else if (!_.isUndefined(script.actual)) {
+                    switch (script.actual.type) {
+
+                        // signal
+                        case 'signal':
+                            if (script.actual.value === 'SIGKILL') {
+                                process.stdout.write('   \\ took too long to run\n');
+                            }
+                            break;
+                    }
+                }
             }
         }
 
