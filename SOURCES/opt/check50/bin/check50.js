@@ -131,7 +131,7 @@ async.waterfall([
     function(callback) {
 
         // upload ZIP
-        process.stdout.write('Uploading..');
+        process.stdout.write('Uploading...');
         var buffer = new Buffer(zip.generate({ base64: false, compression:'DEFLATE' }), 'binary');
         var interval = setInterval(function() {
             process.stdout.write('.');
@@ -182,7 +182,7 @@ async.waterfall([
     function(id, callback) {
 
         // run checks
-        process.stdout.write('Checking..');
+        process.stdout.write('Checking...');
         var interval = setInterval(function() {
             process.stdout.write('.');
         }, 500);
@@ -214,7 +214,7 @@ async.waterfall([
                     return callback(e);
                 }
                 if (!_.isUndefined(payload.error)) {
-                    return callback(new Error(payload.error.message));
+                    return callback(payload.error);
                 }
                 else if (_.isUndefined(payload.id) || _.isUndefined(payload.results)) {
                     return callback(new Error('invalid response from server'));
@@ -235,16 +235,21 @@ async.waterfall([
         switch (err.code) {
 
             case 'ECONNREFUSED':
-                process.stdout.write('Could not reach server.');
+                process.stdout.write('could not reach server');
                 break;
 
             case 'ECONNRESET':
-                process.stdout.write('Connection to server died.');
+                process.stdout.write('connection to server died');
+                break;
+
+            case 'E_USAGE':
+                process.stdout.write(err.message);
                 break;
 
             default:
-                process.stdout.write('An error occurred.');
-                console.log(err);
+                process.stdout.write('unknown');
+                process.stdout.write('\n');
+                console.log(err.code);
         }
         process.stdout.write('\n');
         process.exit(1);
