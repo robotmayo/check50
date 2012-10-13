@@ -39,7 +39,7 @@ cp -a %{_sourcedir}/* %{_builddir}/
 ############################################################################
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/opt/check50
+mkdir -p %{buildroot}/opt/%{name}
 cp -a %{_builddir}/* %{buildroot}/
 mkdir -p %{buildroot}%{_bindir}
 ln -s /opt/%{name}/bin/%{name} %{buildroot}%{_bindir}/%{name}
