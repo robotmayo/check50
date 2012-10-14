@@ -7,7 +7,7 @@
 //
 
 // version
-var VERSION = 1.6;
+var VERSION = 1.7;
 
 // endpoint
 var ENDPOINT = 'https://sandbox.cs50.net';
@@ -323,6 +323,13 @@ async.waterfall([
 
                         // diff
                         case 'diff':
+                            
+                            // TEMP
+                            if (script.expected.value === null && script.actual.value === null) {
+                                process.stdout.write('   \\ binary files differed\n');
+                                break;
+                            }
+
                             var expected = script.expected.value.replace(/\n$/, '').split(/\n/);
                             var actual = script.actual.value.replace(/\n$/, '').split(/\n/);
                             for (var i = 0; i < expected.length; i++) {
