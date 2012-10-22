@@ -7,13 +7,13 @@
 //
 
 // version
-var VERSION = 1.7;
+var VERSION = 1.8;
 
 // endpoint
 var ENDPOINT = 'https://sandbox.cs50.net';
 
 // modules
-var argv = require('../lib/node_modules/optimist').alias('c', 'checks').alias('h', 'help').alias('v', 'version').argv;
+var argv = require('../lib/node_modules/optimist').boolean(['d','h','v']).alias('d', 'debug').alias('h', 'help').alias('v', 'version').argv;
 var async = require('../lib/node_modules/async');
 var child_process = require('child_process');
 var fs = require('fs');
@@ -26,35 +26,39 @@ var _ = require('../lib/node_modules/underscore');
 var wrench = require('../lib/node_modules/wrench');
 
 // -v, --version
-if (!_.isUndefined(argv.v)) {
-    console.log(VERSION);
+if (argv.version === true) {
+    process.stdout.write(VERSION);
     process.exit(0);
 }
 
 // -h, --help
-if (argv._.length === 0 || _.isUndefined(argv.c) || !_.isUndefined(argv.h)) {
-    console.log('Usage: check50 -c checks path [path ...]');
+if (argv.help === true) {
+    process.stdout.write('Usage: check50 checks path [path ...]\n');
     process.exit(0);
+}
+else if (argv._.length < 2) {
+    process.stderr.write('Usage: check50 checks path [path ...]\n');
+    process.exit(1);
 }
 
 // prepare to union paths
 var paths = [];
 
 // iterate over roots
-_.each(argv._, function(root) {
+_.each(argv._.slice(1), function(root) {
 
     // resolve root to absolute path (so that we can trim longest common prefix)
     root = path.resolve(root);
 
     // ensure path exists
     if (!path.existsSync(root)) {
-        console.log('No such file or directory: ' + root);
+        process.stderr.write('No such file or directory: ' + root);
         process.exit(1);
     }
 
     // blacklist / since readdirSyncRecursive fails on it)
     if (_.contains(['/'], root)) {
-        console.log('Illegal file or directory: ' + root);
+        process.stderr.write('Illegal file or directory: ' + root);
         process.exit(1);
     }
 
@@ -80,7 +84,7 @@ _.each(argv._, function(root) {
 
 // ensure a path exists
 if (paths.length === 0) {
-    console.log('Nothing to check');
+    process.stderr.write('Nothing to check');
     process.exit(1);
 }
 
@@ -103,7 +107,9 @@ var prefix = new RegExp('^' + (function() {
 var zip = new JSZip();
 
 // iterate over paths
-process.stdout.write('Compressing...');
+if (argv.debug === false) {
+    process.stdout.write('Compressing...');
+}
 _.each(paths, function(p) {
 
     // trim prefix
@@ -124,20 +130,22 @@ _.each(paths, function(p) {
             zip.file(suffix, fs.readFileSync(p).toString());
         }
         catch (e) {
-            process.stdout.write(' Error.\n');
+            process.stderr.write(' Error.\n');
             switch (e.code) {
 
                 case 'EACCES':
-                    process.stdout.write('could not read file');
+                    process.stderr.write('could not read file');
                     break;
             }
-            process.stdout.write('\n');
+            process.stderr.write('\n');
             process.exit(1);
         }
     }
 
 });
-process.stdout.write(' Compressed.\n');
+if (argv.debug === false) {
+    process.stdout.write(' Compressed.\n');
+}
 
 // check!
 async.waterfall([
@@ -146,10 +154,14 @@ async.waterfall([
     function(callback) {
 
         // upload ZIP
-        process.stdout.write('Uploading...');
+        if (argv.debug === false) {
+            process.stdout.write('Uploading...');
+        }
         var buffer = new Buffer(zip.generate({ base64: false, compression:'DEFLATE' }), 'binary');
         var interval = setInterval(function() {
-            process.stdout.write('.');
+            if (argv.debug === false) {
+                process.stdout.write('.');
+            }
         }, 500);
         request.post({
          body: buffer,
@@ -175,7 +187,9 @@ async.waterfall([
                     return callback(new Error(e));
                 }
                 if (!_.isUndefined(payload.id)) {
-                    process.stdout.write(' Uploaded.\n');
+                    if (argv.debug === false) {
+                        process.stdout.write(' Uploaded.\n');
+                    }
                     return callback(null, payload.id);
                 }
                 else if (!_.isUndefined(payload.error)) {
@@ -197,13 +211,17 @@ async.waterfall([
     function(id, callback) {
 
         // run checks
-        process.stdout.write('Checking...');
+        if (argv.debug === false) {
+            process.stdout.write('Checking...');
+        }
         var interval = setInterval(function() {
-            process.stdout.write('.');
+            if (argv.debug === false) {
+                process.stdout.write('.');
+            }
         }, 500);
         request.post({
          form: {
-          checks: argv.c,
+          checks: argv._[0],
           homedir: id
          },
          headers: {
@@ -235,7 +253,9 @@ async.waterfall([
                     return callback(new Error('invalid response from server'));
                 }
                 else {
-                    process.stdout.write(' Checked.\n');
+                    if (argv.debug === false) {
+                        process.stdout.write(' Checked.\n');
+                    }
                     return callback(null, payload.id, payload.results);
                 }
             }
@@ -246,30 +266,36 @@ async.waterfall([
 
     // report results
     if (err !== null) {
-        process.stdout.write(' Error.\n');
+        process.stderr.write(' Error.\n');
         switch (err.code) {
 
             case 'ECONNREFUSED':
-                process.stdout.write('could not reach server');
+                process.stderr.write('could not reach server');
                 break;
 
             case 'ECONNRESET':
-                process.stdout.write('connection to server died');
+                process.stderr.write('connection to server died');
                 break;
 
             case 'E_USAGE':
-                process.stdout.write(err.message);
+                process.stderr.write(err.message);
                 break;
 
             default:
-                process.stdout.write('unknown');
-                process.stdout.write('\n');
-                console.log(err.code);
+                process.stderr.write('unknown');
+                process.stderr.write('\n');
+                process.stderr.write(err.code);
         }
-        process.stdout.write('\n');
+        process.stderr.write('\n');
         process.exit(1);
     }
     else {
+
+        // -d, --debug
+        if (argv.debug === true) {
+            process.stdout.write(JSON.stringify(results, undefined, '  '));
+            process.exit(0);
+        }
 
         // iterate over checks
         for (check in results) {
