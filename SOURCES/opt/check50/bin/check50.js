@@ -7,7 +7,7 @@
 //
 
 // version
-var VERSION = 1.8;
+var VERSION = 1.9;
 
 // endpoint
 var ENDPOINT = 'https://sandbox.cs50.net';
@@ -52,13 +52,13 @@ _.each(argv._.slice(1), function(root) {
 
     // ensure path exists
     if (!path.existsSync(root)) {
-        process.stderr.write('No such file or directory: ' + root);
+        process.stderr.write('No such file or directory: ' + root + '\n');
         process.exit(1);
     }
 
     // blacklist / since readdirSyncRecursive fails on it)
     if (_.contains(['/'], root)) {
-        process.stderr.write('Illegal file or directory: ' + root);
+        process.stderr.write('Illegal file or directory: ' + root + '\n');
         process.exit(1);
     }
 
@@ -84,7 +84,7 @@ _.each(argv._.slice(1), function(root) {
 
 // ensure a path exists
 if (paths.length === 0) {
-    process.stderr.write('Nothing to check');
+    process.stderr.write('Nothing to check' + '\n');
     process.exit(1);
 }
 
@@ -134,7 +134,7 @@ _.each(paths, function(p) {
             switch (e.code) {
 
                 case 'EACCES':
-                    process.stderr.write('could not read file');
+                    process.stderr.write('could not read file'+ '\n');
                     break;
             }
             process.stderr.write('\n');
@@ -270,23 +270,21 @@ async.waterfall([
         switch (err.code) {
 
             case 'ECONNREFUSED':
-                process.stderr.write('could not reach server');
+                process.stderr.write('could not reach server' + '\n');
                 break;
 
             case 'ECONNRESET':
-                process.stderr.write('connection to server died');
+                process.stderr.write('connection to server died' + '\n');
                 break;
 
             case 'E_USAGE':
-                process.stderr.write(err.message);
+                process.stderr.write(err.message + '\n');
                 break;
 
             default:
-                process.stderr.write('unknown');
-                process.stderr.write('\n');
-                process.stderr.write(err.code);
+                process.stderr.write('unknown\n');
+                process.stderr.write(err.code + '\n');
         }
-        process.stderr.write('\n');
         process.exit(1);
     }
     else {
@@ -405,7 +403,7 @@ async.waterfall([
                                             process.stdout.write('..."');
                                         }
                                         if (script.actual.type === 'stderr') {
-                                            process.stdout.write(' on stderr');
+                                            process.stdout.write(' on stderr\n');
                                         }
                                         process.stdout.write('\n');
                                         break;
