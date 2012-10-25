@@ -7,7 +7,7 @@
 //
 
 // version
-var VERSION = 1.9;
+var VERSION = 1.10;
 
 // endpoint
 var ENDPOINT = 'https://sandbox.cs50.net';
@@ -27,7 +27,7 @@ var wrench = require('../lib/node_modules/wrench');
 
 // -v, --version
 if (argv.version === true) {
-    process.stdout.write(VERSION);
+    process.stdout.write(VERSION.toString() + '\n');
     process.exit(0);
 }
 
