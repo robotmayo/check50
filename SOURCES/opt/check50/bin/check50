@@ -2,6 +2,7 @@
 <?php
 
     // ensure appliance has Internet access
+    // TODO: change to `wget --inet4-only -O /dev/null -q https://sandbox.cs50.net/` to avoid IPv6 issue?
     if (@fsockopen('check.cs50.net', 80, $errno) === false) {
         print("Appliance does not seem to have Internet access. Restarting networking...\n");
         exec("sudo service network restart");
@@ -15,6 +16,6 @@
 
     // check!
     $cmd = array_merge(array(__DIR__ . '/check50.js'), array_slice($argv, 1));
-    passthru(escapeshellcmd(implode(' ', $cmd)));
+    passthru(implode(' ', array_map(function($arg) { return escapeshellarg($arg); }, $cmd)));
 
 ?>
