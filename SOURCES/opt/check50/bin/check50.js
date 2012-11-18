@@ -7,7 +7,7 @@
 //
 
 // version
-var VERSION = '1.12';
+var VERSION = '1.13';
 
 // endpoint
 var ENDPOINT = 'https://sandbox.cs50.net';
@@ -47,7 +47,7 @@ var paths = [];
 // iterate over roots
 _.each(argv._.slice(1), function(root) {
 
-    // resolve root to absolute path (so that we can trim longest common prefix)
+    // resolve root to absolute path so that we can trim longest common prefix
     root = path.resolve(root);
 
     // ensure path exists
@@ -56,7 +56,7 @@ _.each(argv._.slice(1), function(root) {
         process.exit(1);
     }
 
-    // blacklist / since readdirSyncRecursive fails on it)
+    // blacklist / since readdirSyncRecursive fails on it
     if (_.contains(['/'], root)) {
         process.stderr.write('Illegal file or directory: ' + root + '\n');
         process.exit(1);
@@ -132,7 +132,6 @@ _.each(paths, function(p) {
         catch (e) {
             process.stderr.write(' Error.\n');
             switch (e.code) {
-
                 case 'EACCES':
                     process.stderr.write('could not read file'+ '\n');
                     break;
@@ -153,11 +152,12 @@ async.waterfall([
     // POST /upload
     function(callback) {
 
+        // TODO: come up with a non-blocking way so that progress dots appear
         // upload ZIP
         if (argv.debug === false) {
             process.stdout.write('Uploading...');
         }
-        var buffer = new Buffer(zip.generate({ base64: false, compression:'DEFLATE' }), 'binary');
+        var buffer = new Buffer(zip.generate({ base64: false, compression:'STORE' }), 'binary');
         var interval = setInterval(function() {
             if (argv.debug === false) {
                 process.stdout.write('.');
@@ -193,9 +193,10 @@ async.waterfall([
                     return callback(null, payload.id);
                 }
                 else if (!_.isUndefined(payload.error)) {
-                    callback(new Error(payload.error));
+                    callback(payload.error);
                 }
                 else {
+                    console.log(JSON.stringify(payload, undefined, ' '));
                     return callback(new Error('Invalid response from server'));
                 }
 
@@ -275,6 +276,10 @@ async.waterfall([
 
             case 'ECONNRESET':
                 process.stderr.write('connection to server died' + '\n');
+                break;
+
+            case 'E_SIZE':
+                process.stderr.write('file(s) too large to upload' + '\n');
                 break;
 
             case 'E_USAGE':
