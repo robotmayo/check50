@@ -33,11 +33,11 @@ if (argv.version === true) {
 
 // -h, --help
 if (argv.help === true) {
-    process.stdout.write('Usage: check50 checks path [path ...]\n');
+    process.stdout.write('Usage: check50 id path [path ...]\n');
     process.exit(0);
 }
 else if (argv._.length < 2) {
-    process.stderr.write('Usage: check50 checks path [path ...]\n');
+    process.stderr.write('Usage: check50 id path [path ...]\n');
     process.exit(1);
 }
 
@@ -49,6 +49,9 @@ _.each(argv._.slice(1), function(root) {
 
     // resolve root to absolute path so that we can trim longest common prefix
     root = path.resolve(root);
+
+    // TODO: Add "\rValidating foo.c..." output, then output " Not found.",
+    // rather than printing full path
 
     // ensure path exists
     if (!path.existsSync(root)) {
@@ -84,7 +87,7 @@ _.each(argv._.slice(1), function(root) {
 
 // ensure a path exists
 if (paths.length === 0) {
-    process.stderr.write('Nothing to check' + '\n');
+    process.stderr.write('Nothing to check.' + '\n');
     process.exit(1);
 }
 
@@ -107,9 +110,6 @@ var prefix = new RegExp('^' + (function() {
 var zip = new JSZip();
 
 // iterate over paths
-if (argv.debug === false) {
-    process.stdout.write('Compressing...');
-}
 _.each(paths, function(p) {
 
     // trim prefix
@@ -127,24 +127,31 @@ _.each(paths, function(p) {
     }
     else if (stats.isFile()) {
         try {
+            if (argv.debug === false) {
+                process.stdout.write('Compressing ' + suffix + '...');
+            }
             zip.file(suffix, fs.readFileSync(p).toString());
+            if (argv.debug === false) {
+                process.stdout.write(' Compressed.\n');
+            }
         }
         catch (e) {
-            process.stderr.write(' Error.\n');
             switch (e.code) {
+
                 case 'EACCES':
-                    process.stderr.write('could not read file'+ '\n');
+                    process.stderr.write(' Could not read file.\n');
                     break;
+
+                default:
+                    process.stderr.write(' ' + e.code + ' error.\n');
+                    break;
+
             }
-            process.stderr.write('\n');
             process.exit(1);
         }
     }
 
 });
-if (argv.debug === false) {
-    process.stdout.write(' Compressed.\n');
-}
 
 // check!
 async.waterfall([
@@ -152,12 +159,11 @@ async.waterfall([
     // POST /upload
     function(callback) {
 
-        // TODO: come up with a non-blocking way so that progress dots appear
         // upload ZIP
         if (argv.debug === false) {
             process.stdout.write('Uploading...');
         }
-        var buffer = new Buffer(zip.generate({ base64: false, compression:'STORE' }), 'binary');
+        var buffer = new Buffer(zip.generate({ base64: false, compression:'DEFLATE' }), 'binary');
         var interval = setInterval(function() {
             if (argv.debug === false) {
                 process.stdout.write('.');
@@ -193,10 +199,9 @@ async.waterfall([
                     return callback(null, payload.id);
                 }
                 else if (!_.isUndefined(payload.error)) {
-                    callback(payload.error);
+                    callback(new Error(payload.error));
                 }
                 else {
-                    console.log(JSON.stringify(payload, undefined, ' '));
                     return callback(new Error('Invalid response from server'));
                 }
 
@@ -267,28 +272,24 @@ async.waterfall([
 
     // report results
     if (err !== null) {
-        process.stderr.write(' Error.\n');
         switch (err.code) {
 
             case 'ECONNREFUSED':
-                process.stderr.write('could not reach server' + '\n');
+                process.stderr.write(' Could not reach server.\n');
                 break;
 
             case 'ECONNRESET':
-                process.stderr.write('connection to server died' + '\n');
+                process.stderr.write(' connection to server died.\n');
                 break;
 
-            case 'E_SIZE':
-                process.stderr.write('file(s) too large to upload' + '\n');
-                break;
-
+            // TODO: don't co-mingle E_USAGE
             case 'E_USAGE':
-                process.stderr.write(err.message + '\n');
+                process.stderr.write(' ' + err.message + '\n');
                 break;
 
             default:
-                process.stderr.write('unknown\n');
-                process.stderr.write(err.code + '\n');
+                process.stderr.write(' ' + err.code + ' error.\n');
+
         }
         process.exit(1);
     }
@@ -344,90 +345,129 @@ async.waterfall([
                 }
 
                 // mismatch is always at end of script
-                var script = results[check].script[results[check].script.length - 1];
+                var mismatch = results[check].script[results[check].script.length - 1];
 
-                // explain mismatch
-                if (!_.isUndefined(script.expected)) {
-                    switch (script.expected.type) {
 
-                        // diff
-                        case 'diff':
-                            
-                            // TEMP
-                            if (script.expected.value === null && script.actual.value === null) {
-                                process.stdout.write('   \\ binary files differed\n');
-                                break;
-                            }
+                // prepare substring of actual stderr or stdout
+                var substring;
+                if (!_.isUndefined(mismatch.actual)) {
+                    if (mismatch.actual.type === 'stderr' || mismatch.actual.type === 'stdout') {
+                        var string = JSON.stringify(mismatch.actual.value);
+                        substring = string.substring(0, 40);
+                        if (substring.length < string.length) {
+                            substring += '..."';
+                        }
+                    }
+                }
 
-                            var expected = script.expected.value.replace(/\n$/, '').split(/\n/);
-                            var actual = script.actual.value.replace(/\n$/, '').split(/\n/);
-                            for (var i = 0; i < expected.length; i++) {
-                                if (i >= actual.length || expected[i] !== actual[i]) {
-                                    var string = JSON.stringify(expected[i]);
-                                    var substring = string.substring(0, 40);
-                                    process.stdout.write('   \\ expected ' + substring + ' on line ' + (i + 1) + '\n');
+                // diff
+                if (mismatch.expected.type === 'diff') {
+
+                    // compare binary files
+                    if (_.isArray(mismatch.actual.value)) {
+                        if (mismatch.expected.value.length !== mismatch.actual.value.length) {
+                            process.stdout.write('   \\ expected file to be of length ' + mismatch.expected.value.length + ', not ' + mismatch.actual.value.length + '\n');
+                        }
+                        else {
+                            for (var i = 0, n = mismatch.expected.value.length; i < n; i++) {
+                                if (mismatch.expected.value[i] !== mismatch.actual.value[i]) {
+                                    process.stdout.write('   \\ expected 0x' + mismatch.expected.value[i].toString(16) + ' at byte ' + i + ', not 0x' + mismatch.actual.value[i].toString(16) + '\n');
                                     break;
                                 }
                             }
-                            if (actual.length > expected.length) {
-                                var string = JSON.stringify(actual[expected.length]);
-                                var substring = string.substring(0, 40);
-                                process.stdout.write('   \\ wasn\'t expecting ' + substring + ' on line ' + (expected.length + 1) + '\n');
-                            }
-                            break;
+                        }
+ 
+                    }
 
-                        // exists
-                        case 'exists':
-                            process.stdout.write('   \\ expected ' + script.expected.value + ' to exist\n');
-                            break;
-
-                        // exit, stderr, stdin, stdout
-                        default:
-                            if (!_.isUndefined(script.actual)) {
-                                switch (script.actual.type) {
-
-                                    // exit
-                                    case 'exit':
-                                        process.stdout.write('   \\ wasn\'t expecting an exit code of ' + script.actual.value + '\n');
-                                        break;
-
-                                    // stdin
-                                    case 'stdin':
-                                        process.stdout.write('   \\ wasn\'t expecting to be prompted for input\n');
-                                        break;
-
-                                    // stderr, stdout
-                                    case 'stderr':
-                                    case 'stdout':
-
-                                        // display up to 40 characters
-                                        var string = JSON.stringify(script.actual.value);
-                                        var substring = string.substring(0, 40);
-                                        process.stdout.write('   \\ wasn\'t expecting ' + substring);
-                                        if (substring.length < string.length) {
-                                            process.stdout.write('..."');
-                                        }
-                                        if (script.actual.type === 'stderr') {
-                                            process.stdout.write(' on stderr\n');
-                                        }
-                                        process.stdout.write('\n');
-                                        break;
-
+                    // compare text files
+                    else if (_.isString(mismatch.actual.value)) {
+                        if (mismatch.expected.value.length !== mismatch.actual.value.length) {
+                            process.stdout.write('   \\ expected file to be of length ' + mismatch.expected.value.length + ', not ' + mismatch.actual.value.length + '\n');
+                        }
+                        else {
+                            for (var c = 1, i = 0, l = 1, n = mismatch.expected.value.length; i < n; i++) {
+                                if (mismatch.expected.value.charAt(i) !== mismatch.actual.value.charAt(i)) {
+                                    process.stdout.write('   \\ expected ' + JSON.stringify(mismatch.expected.value.charAt(i)) + ' character ' + c + ' of line ' + l + ', not ' + JSON.stringify(mismatch.actual.value.charAt(i)));
+                                    break;
+                                }
+                                if (mismatch.expected.value.charAt(i) === '\n') {
+                                    l++;
+                                    c = 1;
+                                }
+                                else {
+                                    c++;
                                 }
                             }
+                        }
                     }
-
                 }
-                else if (!_.isUndefined(script.actual)) {
-                    switch (script.actual.type) {
 
-                        // signal
-                        case 'signal':
-                            if (script.actual.value === 'SIGKILL') {
-                                process.stdout.write('   \\ took too long to run\n');
-                            }
-                            break;
+                // exists
+                else if (mismatch.expected.type === 'exists') {
+                    process.stdout.write('   \\ expected ' + mismatch.expected.value + ' to exist\n');
+                }
+
+                // exit
+                else if (mismatch.expected.type === 'exit') {
+                    process.stdout.write('   \\ expected an exit code of ' + mismatch.expected.value);
+                    if (mismatch.actual.type === 'exit') {
+                        process.stdout.write(', not ' + mismatch.actual.value);
                     }
+                    else if (mismatch.actual.type === 'stderr') {
+                        process.stdout.write(', not standard error of ' + substring);
+                    }
+                    else if (mismatch.actual.type === 'stdin') {
+                        process.stdout.write(', not a prompt for input');
+                    }
+                    else if (mismatch.actual.type === 'stdout') {
+                        process.stdout.write(', not output of ' + substring);
+                    }
+                    process.stdout.write('\n');
+                }
+                else if (mismatch.expected.type === 'stderr') {
+                    process.stdout.write('   \\ expected standard error');
+                    if (mismatch.actual.type === 'exit') {
+                        process.stdout.write(', not an exit code of ' + mismatch.actual.value);
+                    }
+                    else if (mismatch.actual.type === 'stderr') {
+                        process.stdout.write(', but not ' + substring);
+                    }
+                    else if (mismatch.actual.type === 'stdin') {
+                        process.stdout.write(', not a prompt for input');
+                    }
+                    else if (mismatch.actual.type === 'stdout') {
+                        process.stdout.write(', not output of ' + substring);
+                    }
+                    process.stdout.write('\n');
+                }
+                else if (mismatch.expected.type === 'stdin') {
+                    process.stdout.write('   \\ expected prompt for input');
+                    if (mismatch.actual.type === 'exit') {
+                        process.stdout.write(', not exit code of ' + mismatch.actual.value);
+                    }
+                    else if (mismatch.actual.type === 'stderr') {
+                        process.stdout.write(', not standard error of ' + substring);
+                    }
+                    else if (mismatch.actual.type === 'stdout') {
+                        process.stdout.write(', not output of ' + substring);
+                    }
+                    process.stdout.write('\n');
+                }
+                else if (mismatch.expected.type === 'stdout') {
+                    process.stdout.write('   \\ expected output');
+                    if (mismatch.actual.type === 'exit') {
+                        process.stdout.write(', not an exit code of ' + mismatch.actual.value);
+                    }
+                    else if (mismatch.actual.type === 'stdin') {
+                        process.stdout.write(', not a prompt for input');
+                    }
+                    else if (mismatch.actual.type === 'stderr') {
+                        process.stdout.write(', not standard error of ' + substring);
+                    }
+                    else if (mismatch.actual.type === 'stdout') {
+                        process.stdout.write(', but not ' + substring);
+                    }
+                    process.stdout.write('\n');
                 }
             }
         }
