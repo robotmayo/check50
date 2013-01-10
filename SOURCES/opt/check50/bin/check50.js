@@ -7,10 +7,11 @@
 //
 
 // version
-var VERSION = '1.13';
+var VERSION = '1.14';
 
 // endpoint
 var ENDPOINT = 'https://sandbox.cs50.net';
+var ENDPOINT = 'http://localhost:8080';
 
 // modules
 var argv = require('../lib/node_modules/optimist').boolean(['d','h','v']).alias('d', 'debug').alias('h', 'help').alias('v', 'version').argv;
@@ -190,7 +191,7 @@ async.waterfall([
                     payload = JSON.parse(body);
                 }
                 catch (e) {
-                    return callback(new Error(e));
+                    return callback(e);
                 }
                 if (!_.isUndefined(payload.id)) {
                     if (argv.debug === false) {
@@ -199,7 +200,7 @@ async.waterfall([
                     return callback(null, payload.id);
                 }
                 else if (!_.isUndefined(payload.error)) {
-                    callback(new Error(payload.error));
+                    callback(payload.error);
                 }
                 else {
                     return callback(new Error('Invalid response from server'));
