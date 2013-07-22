@@ -1,5 +1,5 @@
 #!/bin/env nodejs
-// 
+//
 // This is CS50 Check.
 //
 // David J. Malan
@@ -11,10 +11,10 @@ var VERSION = '1.14';
 
 // endpoint
 var ENDPOINT = 'https://sandbox.cs50.net';
-var ENDPOINT = 'http://localhost:8080';
 
 // modules
-var argv = require('../lib/node_modules/optimist').boolean(['d','h','v']).alias('d', 'debug').alias('h', 'help').alias('v', 'version').argv;
+var argv = require('../lib/node_modules/optimist').boolean(['d','h','v','c'])
+            .alias('d', 'debug').alias('h', 'help').alias('v', 'version').alias('c', 'coupon').argv;
 var async = require('../lib/node_modules/async');
 var child_process = require('child_process');
 var fs = require('fs');
@@ -133,7 +133,7 @@ _.each(paths, function(p) {
             }
             zip.file(suffix, fs.readFileSync(p).toString());
             if (argv.debug === false) {
-                process.stdout.write(' Compressed.\n');
+                process.stdout.write(' Compressed.' + (argv.coupon === true ? '\33[2K\r' : '\n'));
             }
         }
         catch (e) {
@@ -195,7 +195,7 @@ async.waterfall([
                 }
                 if (!_.isUndefined(payload.id)) {
                     if (argv.debug === false) {
-                        process.stdout.write(' Uploaded.\n');
+                        process.stdout.write(' Uploaded.' + (argv.coupon === true ? '\33[2K\r' : '\n'));
                     }
                     return callback(null, payload.id);
                 }
@@ -261,7 +261,7 @@ async.waterfall([
                 }
                 else {
                     if (argv.debug === false) {
-                        process.stdout.write(' Checked.\n');
+                        process.stdout.write(' Checked.' + (argv.coupon === true ? '\33[2K\r' : '\n'));
                     }
                     return callback(null, payload.id, payload.results);
                 }
@@ -302,6 +302,13 @@ async.waterfall([
             process.exit(0);
         }
 
+        // -c, --coupon
+        else if (argv.coupon === true) {
+            process.stdout.write(id + '\n');
+            process.exit(0);
+        }
+
+
         // iterate over checks
         for (check in results) {
 
@@ -329,7 +336,7 @@ async.waterfall([
             // report failed check in red
             else {
 
-                // :( 
+                // :(
                 process.stdout.write('\033[31m'); // red
                 process.stdout.write(':( ' + results[check].description + '\n');
                 process.stdout.write('\033[39m'); // default
@@ -339,7 +346,7 @@ async.waterfall([
                     process.stdout.write('   \\ ' + results[check].error + '\n');
                     continue;
                 }
- 
+
                 // check for script
                 if (_.isUndefined(results[check].script)) {
                     continue;
@@ -377,7 +384,6 @@ async.waterfall([
                                 }
                             }
                         }
- 
                     }
 
                     // compare text files
