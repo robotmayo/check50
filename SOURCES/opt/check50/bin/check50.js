@@ -244,7 +244,7 @@ async.waterfall([
                 return callback(err);
             }
             else if (response.statusCode !== 200) {
-                return callback(new Error('server responded with status code ' +
+                return callback(new Error('Server responded with status code ' +
                     response.statusCode + '. Try again later!'));
             }
 
