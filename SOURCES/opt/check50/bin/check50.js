@@ -1,4 +1,4 @@
-#!/bin/env nodejs
+#!/bin/env node
 //
 // This is CS50 Check.
 //
@@ -7,10 +7,11 @@
 //
 
 // version
-var VERSION = '1.14';
+var VERSION = '1.15';
 
 // endpoint
-var ENDPOINT = 'https://sandbox.cs50.net';
+//var ENDPOINT = 'https://sandbox.cs50.net';
+var ENDPOINT = 'http://localhost:8090';
 
 // modules
 var argv = require('../lib/node_modules/optimist').boolean(['d','h','v','c'])
@@ -22,7 +23,7 @@ var http = require('http');
 var https = require('https');
 var JSZip = require('../lib/node_modules/node-zip');
 var path = require('path');
-var request = require('request');
+var request = require('../lib/node_modules/request');
 var _ = require('../lib/node_modules/underscore');
 var wrench = require('../lib/node_modules/wrench');
 
@@ -55,7 +56,7 @@ _.each(argv._.slice(1), function(root) {
     // rather than printing full path
 
     // ensure path exists
-    if (!path.existsSync(root)) {
+    if (!fs.existsSync(root)) {
         process.stderr.write('No such file or directory: ' + root + '\n');
         process.exit(1);
     }
@@ -170,47 +171,46 @@ async.waterfall([
                 process.stdout.write('.');
             }
         }, 500);
-        request.post({
-         body: buffer,
-         headers: {
-          'Content-Length': buffer.length,
-          'Content-Type': 'application/zip',
-          'Content-Transfer-Encoding': 'binary'
-         },
-         uri: ENDPOINT + '/upload'
 
+        request.post({
+            body: buffer,
+            headers: {
+                'Content-Length': buffer.length,
+                'Content-Type': 'application/zip',
+                'Content-Transfer-Encoding': 'binary'
+            },
+            uri: ENDPOINT + '/upload'
         }, function(err, response, body) {
 
             // handle response
             clearInterval(interval);
-            if (err === null) {
-
-                // parse body
-                var payload;
-                try {
-                    payload = JSON.parse(body);
-                }
-                catch (e) {
-                    return callback(e);
-                }
-                if (!_.isUndefined(payload.id)) {
-                    if (argv.debug === false) {
-                        process.stdout.write(' Uploaded.' + (argv.coupon === true ? '\33[2K\r' : '\n'));
-                    }
-                    return callback(null, payload.id);
-                }
-                else if (!_.isUndefined(payload.error)) {
-                    callback(payload.error);
-                }
-                else {
-                    return callback(new Error('Invalid response from server'));
-                }
-
-            }
-            else {
+            if (err !== null) {
                 return callback(err);
             }
+            else if (response.statusCode !== 200) {
+                return callback(new Error('Server responded with status code ' +
+                    response.statusCode + '. Try again later!'));
+            }
 
+            // parse body
+            try {
+                var payload = JSON.parse(body);
+            }
+            catch (e) {
+                return callback(e);
+            }
+            if (!_.isUndefined(payload.id)) {
+                if (argv.debug === false) {
+                    process.stdout.write(' Uploaded.' + (argv.coupon === true ? '\33[2K\r' : '\n'));
+                }
+                return callback(null, payload.id);
+            }
+            else if (!_.isUndefined(payload.error)) {
+                return callback(payload.error);
+            }
+            else {
+                return callback(new Error('Invalid response from server'));
+            }
         });
     },
 
@@ -221,77 +221,78 @@ async.waterfall([
         if (argv.debug === false) {
             process.stdout.write('Checking...');
         }
+
         var interval = setInterval(function() {
             if (argv.debug === false) {
                 process.stdout.write('.');
             }
         }, 500);
-        request.post({
-         form: {
-          checks: argv._[0],
-          homedir: id
-         },
-         headers: {
-          'Content-Type': 'application/json'
-         },
-         uri: ENDPOINT + '/check'
 
+        request.post({
+            form: {
+                checks: argv._[0],
+                homedir: id
+            },
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            uri: ENDPOINT + '/check'
         }, function(err, response, body) {
 
             // handle response
             clearInterval(interval);
             if (err !== null) {
-                callback(err);
+                return callback(err);
+            }
+            else if (response.statusCode !== 200) {
+                return callback(new Error('server responded with status code ' +
+                    response.statusCode + '. Try again later!'));
+            }
+
+            // parse body
+            try {
+                var payload = JSON.parse(body);
+            }
+            catch (e) {
+                return callback(e);
+            }
+            if (!_.isUndefined(payload.error)) {
+                return callback(payload.error);
+            }
+            else if (_.isUndefined(payload.id) || _.isUndefined(payload.results)) {
+                return callback(new Error('invalid response from server'));
             }
             else {
-
-                // parse body
-                var payload;
-                try {
-                    payload = JSON.parse(body);
+                if (argv.debug === false) {
+                    process.stdout.write(' Checked.' + (argv.coupon === true ? '\33[2K\r' : '\n'));
                 }
-                catch (e) {
-                    return callback(e);
-                }
-                if (!_.isUndefined(payload.error)) {
-                    return callback(payload.error);
-                }
-                else if (_.isUndefined(payload.id) || _.isUndefined(payload.results)) {
-                    return callback(new Error('invalid response from server'));
-                }
-                else {
-                    if (argv.debug === false) {
-                        process.stdout.write(' Checked.' + (argv.coupon === true ? '\33[2K\r' : '\n'));
-                    }
-                    return callback(null, payload.id, payload.results);
-                }
+                return callback(null, payload.id, payload.results);
             }
-
         });
 
 }], function(err, id, results) {
 
     // report results
     if (err !== null) {
-        switch (err.code) {
-
-            case 'ECONNREFUSED':
-                process.stderr.write(' Could not reach server.\n');
-                break;
-
-            case 'ECONNRESET':
-                process.stderr.write(' connection to server died.\n');
-                break;
-
-            // TODO: don't co-mingle E_USAGE
-            case 'E_USAGE':
-                process.stderr.write(' ' + err.message + '\n');
-                break;
-
-            default:
-                process.stderr.write(' ' + err.code + ' error.\n');
-
+        if (typeof err.code === 'undefined' || err.code === 'E_USAGE') {
+            var message = err.message;
         }
+        else {
+            switch (err.code) {
+                case 'ECONNREFUSED':
+                    var message = 'could not reach server.';
+                    break;
+
+                case 'ECONNRESET':
+                    var message = 'connection to server died.';
+                    break;
+
+                default:
+                    var message = err.code + ' error.';
+
+            }
+        }
+        process.stderr.write(' ' + message + '\n');
         process.exit(1);
     }
     else {
@@ -438,6 +439,13 @@ async.waterfall([
                     }
                     else if (mismatch.actual.type === 'stderr') {
                         process.stdout.write(', but not ' + substring);
+                        if (mismatch.suggestions.length !== 0) {
+                            process.stdout.write('\n   \\ Suggestions:\n   \\    ');
+                            var suggestions = _.map(mismatch.suggestions, function(x) {
+                                return x.replace(/\n/g, '\n   \\    ');
+                            }).join('\n   \\    ');
+                            process.stdout.write(suggestions);
+                        }
                     }
                     else if (mismatch.actual.type === 'stdin') {
                         process.stdout.write(', not a prompt for input');
@@ -473,6 +481,13 @@ async.waterfall([
                     }
                     else if (mismatch.actual.type === 'stdout') {
                         process.stdout.write(', but not ' + substring);
+                        if (mismatch.suggestions.length !== 0) {
+                            process.stdout.write('\n   \\ Suggestions:\n   \\    ');
+                            var suggestions = _.map(mismatch.suggestions, function(x) {
+                                return x.replace(/\n/g, '\n   \\    ');
+                            }).join('\n   \\    ');
+                            process.stdout.write(suggestions);
+                        }
                     }
                     process.stdout.write('\n');
                 }
