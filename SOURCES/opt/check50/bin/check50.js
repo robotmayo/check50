@@ -10,8 +10,7 @@
 var VERSION = '1.15';
 
 // endpoint
-//var ENDPOINT = 'https://sandbox.cs50.net';
-var ENDPOINT = 'http://localhost:8090';
+var ENDPOINT = 'https://sandbox.cs50.net';
 
 // modules
 var argv = require('../lib/node_modules/optimist').boolean(['d','h','v','c'])
