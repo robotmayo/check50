@@ -1,14 +1,14 @@
 ############################################################################
 Summary: Command-line interface to CS50 Check.
 Name: check50
-Version: 1.15
+Version: 1.16
 Release: 0
 License: CC BY-NC-SA 3.0
 Group: Applications/Productivity
 Vendor: CS50
 URL: https://manual.cs50.net/Check
 BuildRoot: %{_tmppath}/%{name}-root
-Requires: nodejs >= 0.6.18
+Requires: nodejs >= 0.10.16
 BuildArch: noarch
 
 

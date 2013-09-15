@@ -7,7 +7,7 @@
 //
 
 // version
-var VERSION = '1.15';
+var VERSION = '1.16';
 
 // endpoint
 var ENDPOINT = 'https://sandbox.cs50.net';
@@ -18,8 +18,6 @@ var argv = require('../lib/node_modules/optimist').boolean(['d','h','v','c'])
 var async = require('../lib/node_modules/async');
 var child_process = require('child_process');
 var fs = require('fs');
-var http = require('http');
-var https = require('https');
 var JSZip = require('../lib/node_modules/node-zip');
 var path = require('path');
 var request = require('../lib/node_modules/request');
@@ -133,7 +131,7 @@ _.each(paths, function(p) {
             }
             zip.file(suffix, fs.readFileSync(p).toString());
             if (argv.debug === false) {
-                process.stdout.write(' Compressed.' + (argv.coupon === true ? '\33[2K\r' : '\n'));
+                process.stdout.write('\33[2K\r');
             }
         }
         catch (e) {
@@ -162,7 +160,7 @@ async.waterfall([
 
         // upload ZIP
         if (argv.debug === false) {
-            process.stdout.write('Uploading...');
+            process.stdout.write('Uploading.');
         }
         var buffer = new Buffer(zip.generate({ base64: false, compression:'DEFLATE' }), 'binary');
         var interval = setInterval(function() {
@@ -178,6 +176,7 @@ async.waterfall([
                 'Content-Type': 'application/zip',
                 'Content-Transfer-Encoding': 'binary'
             },
+            jar: true,
             uri: ENDPOINT + '/upload'
         }, function(err, response, body) {
 
@@ -186,9 +185,8 @@ async.waterfall([
             if (err !== null) {
                 return callback(err);
             }
-            else if (response.statusCode !== 200) {
-                return callback(new Error('Server responded with status code ' +
-                    response.statusCode + '. Try again later!'));
+            else if (response.statusCode === 503) {
+                return callback(new Error('server is offline'));
             }
 
             // parse body
@@ -200,7 +198,7 @@ async.waterfall([
             }
             if (!_.isUndefined(payload.id)) {
                 if (argv.debug === false) {
-                    process.stdout.write(' Uploaded.' + (argv.coupon === true ? '\33[2K\r' : '\n'));
+                    process.stdout.write('\33[2K\r');
                 }
                 return callback(null, payload.id);
             }
@@ -218,7 +216,7 @@ async.waterfall([
 
         // run checks
         if (argv.debug === false) {
-            process.stdout.write('Checking...');
+            process.stdout.write('Checking.');
         }
 
         var interval = setInterval(function() {
@@ -235,6 +233,7 @@ async.waterfall([
             headers: {
                 'Content-Type': 'application/json'
             },
+            jar: true,
             uri: ENDPOINT + '/check'
         }, function(err, response, body) {
 
@@ -243,9 +242,8 @@ async.waterfall([
             if (err !== null) {
                 return callback(err);
             }
-            else if (response.statusCode !== 200) {
-                return callback(new Error('Server responded with status code ' +
-                    response.statusCode + '. Try again later!'));
+            else if (response.statusCode === 503) {
+                return callback(new Error('server is offline'));
             }
 
             // parse body
@@ -263,7 +261,7 @@ async.waterfall([
             }
             else {
                 if (argv.debug === false) {
-                    process.stdout.write(' Checked.' + (argv.coupon === true ? '\33[2K\r' : '\n'));
+                    process.stdout.write('\33[2K\r');
                 }
                 return callback(null, payload.id, payload.results);
             }
@@ -307,7 +305,6 @@ async.waterfall([
             process.stdout.write(id + '\n');
             process.exit(0);
         }
-
 
         // iterate over checks
         for (check in results) {
@@ -494,7 +491,7 @@ async.waterfall([
         }
 
         // diagnostics
-        process.stdout.write('https://check.cs50.net/?check=' + id + '\n');
+        process.stdout.write('Permalink at ' + ENDPOINT + '/checks/' + id + '.\n');
     }
 
     // This was CS50 Check.
