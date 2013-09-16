@@ -189,6 +189,9 @@ async.waterfall([
             else if (response.statusCode === 503) {
                 return callback(new Error('server is offline'));
             }
+            else if (response.statusCode !== 200) {
+                return callback(new Error('server responded with status code ' + response.statusCode));
+            }
 
             // parse body
             try {
@@ -245,6 +248,9 @@ async.waterfall([
             }
             else if (response.statusCode === 503) {
                 return callback(new Error('server is offline'));
+            }
+            else if (response.statusCode !== 200) {
+                return callback(new Error('server responded with status code ' + response.statusCode));
             }
 
             // parse body
