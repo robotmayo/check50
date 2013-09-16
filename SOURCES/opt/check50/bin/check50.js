@@ -264,11 +264,11 @@ async.waterfall([
                 if (argv.debug === false) {
                     process.stdout.write('\33[2K\r');
                 }
-                return callback(null, payload.id, payload.results);
+                return callback(null, payload.id, payload);
             }
         });
 
-}], function(err, id, results) {
+}], function(err, id, payload) {
 
     // report results
     if (err !== null) {
@@ -297,7 +297,7 @@ async.waterfall([
 
         // -d, --debug
         if (argv.debug === true) {
-            process.stdout.write(JSON.stringify(results, undefined, '  '));
+            process.stdout.write(JSON.stringify(payload, undefined, '  '));
             process.exit(0);
         }
 
@@ -308,24 +308,24 @@ async.waterfall([
         }
 
         // iterate over checks
-        for (check in results) {
+        for (check in payload.results) {
 
             // report passed check in green
-            if (results[check].result === true) {
+            if (payload.results[check].result === true) {
 
                 // :)
                 process.stdout.write('\033[32m'); // green
-                process.stdout.write(':) ' + results[check].description + '\n');
+                process.stdout.write(':) ' + payload.results[check].description + '\n');
                 process.stdout.write('\033[39m'); // default
 
             }
 
             // report failed dependency in yellow
-            else if (results[check].result === null) {
+            else if (payload.results[check].result === null) {
 
                 // :|
                 process.stdout.write('\033[33m'); // yellow
-                process.stdout.write(':| ' + results[check].description + '\n');
+                process.stdout.write(':| ' + payload.results[check].description + '\n');
                 process.stdout.write('\033[39m'); // default
                 process.stdout.write('   \\ can\'t check until a frown turns upside down\n');
 
@@ -336,22 +336,22 @@ async.waterfall([
 
                 // :(
                 process.stdout.write('\033[31m'); // red
-                process.stdout.write(':( ' + results[check].description + '\n');
+                process.stdout.write(':( ' + payload.results[check].description + '\n');
                 process.stdout.write('\033[39m'); // default
 
                 // check for error
-                if (!_.isUndefined(results[check].error)) {
-                    process.stdout.write('   \\ ' + results[check].error + '\n');
+                if (!_.isUndefined(payload.results[check].error)) {
+                    process.stdout.write('   \\ ' + payload.results[check].error + '\n');
                     continue;
                 }
 
                 // check for script
-                if (_.isUndefined(results[check].script)) {
+                if (_.isUndefined(payload.results[check].script)) {
                     continue;
                 }
 
                 // mismatch is always at end of script
-                var mismatch = results[check].script[results[check].script.length - 1];
+                var mismatch = payload.results[check].script[payload.results[check].script.length - 1];
 
 
                 // prepare substring of actual stderr or stdout
