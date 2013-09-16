@@ -13,8 +13,9 @@ var VERSION = '1.16';
 var ENDPOINT = 'https://sandbox.cs50.net';
 
 // modules
-var argv = require('../lib/node_modules/optimist').boolean(['d','h','v','c'])
-            .alias('d', 'debug').alias('h', 'help').alias('v', 'version').alias('c', 'coupon').argv;
+var argv = 
+    require('../lib/node_modules/optimist').boolean(['d','h','v','c'])
+    .alias('d', 'debug').alias('h', 'help').alias('v', 'version').alias('c', 'coupon').argv;
 var async = require('../lib/node_modules/async');
 var child_process = require('child_process');
 var fs = require('fs');
@@ -206,7 +207,7 @@ async.waterfall([
                 return callback(payload.error);
             }
             else {
-                return callback(new Error('Invalid response from server'));
+                return callback(new Error('invalid response from server'));
             }
         });
     },
@@ -491,7 +492,7 @@ async.waterfall([
         }
 
         // diagnostics
-        process.stdout.write('Permalink at ' + ENDPOINT + '/checks/' + id + '.\n');
+        process.stdout.write(ENDPOINT + '/checks/' + id + '\n');
     }
 
     // This was CS50 Check.
