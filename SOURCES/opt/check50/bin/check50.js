@@ -494,10 +494,12 @@ async.waterfall([
         // diagnostics
         var url = ENDPOINT + '/checks/' + id;
         process.stdout.write(url + '\n');
-        if (!_.isUndefined(process.env.DISPLAY)) {
-            var child = child_process.spawn('google-chrome', ['--app=' + url]);
-            child.unref();
-        }
+
+        // TODO
+        // if (!_.isUndefined(process.env.DISPLAY)) {
+        //     var child = child_process.spawn('google-chrome', ['--app=' + url]);
+        //     child.unref();
+        // }
     }
 
     // This was CS50 Check.
