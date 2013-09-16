@@ -1,7 +1,7 @@
 ############################################################################
 Summary: Command-line interface to CS50 Check.
 Name: check50
-Version: 1.16
+Version: 1.17
 Release: 0
 License: CC BY-NC-SA 3.0
 Group: Applications/Productivity
