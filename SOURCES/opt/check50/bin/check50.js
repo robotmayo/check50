@@ -353,7 +353,6 @@ async.waterfall([
                 // mismatch is always at end of script
                 var mismatch = payload.results[check].script[payload.results[check].script.length - 1];
 
-
                 // prepare substring of actual stderr or stdout
                 var substring;
                 if (!_.isUndefined(mismatch.actual)) {
@@ -366,8 +365,15 @@ async.waterfall([
                     }
                 }
 
+                // signal
+                if (_.isUndefined(mismatch.expected)) {
+                    if (mismatch.actual.type === 'signal' && mismatch.actual.value === 'SIGKILL') {
+                        process.stdout.write('   \\ killed by server\n');
+                    }
+                }
+
                 // diff
-                if (mismatch.expected.type === 'diff') {
+                else if (mismatch.expected.type === 'diff') {
 
                     // compare binary files
                     if (_.isArray(mismatch.actual.value)) {
