@@ -7,7 +7,7 @@
 //
 
 // version
-var VERSION = '1.17';
+var VERSION = '1.19';
 
 // endpoint
 var ENDPOINT = 'https://sandbox.cs50.net';
