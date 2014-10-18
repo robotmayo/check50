@@ -1,4 +1,4 @@
-#!/bin/env node
+#!/usr/bin/env node
 //
 // This is CS50 Check.
 //
